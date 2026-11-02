@@ -1,15 +1,7 @@
 package org.example.application.repository;
 
-import generated.AddItemListingRequest;
-import generated.GetItemListingRequest;
-import generated.GetItemThumbnailsRequest;
-import generated.ItemListing;
+import generated.*;
 import generated.ItemListingServiceGrpc.ItemListingServiceBlockingStub;
-import generated.ItemSummary;
-import generated.ItemThumbnail;
-import generated.ListItemListingsRequest;
-import generated.ListItemListingsResponse;
-import generated.ListItemSummariesResponse;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import org.example.application.exception.InvalidRequestException;
@@ -140,6 +132,15 @@ public class GrpcItemCM implements ItemCM {
         }
     }
 
+    public void removeItemListing(RemoveItemListingRequest request){
+        try {
+        stub.removeItemListing(request);
+        }
+        catch (StatusRuntimeException e) {
+          throw translate(e,"remove item listing");
+        }
+
+    }
     private RuntimeException translate(StatusRuntimeException e, String action) {
         Status status = e.getStatus();
         if (status.getCode() == Status.Code.INVALID_ARGUMENT) {
