@@ -117,6 +117,27 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
         }
     }
 
+    @Override
+    public void removeItemListing(RemoveItemListingRequest request,
+                                  StreamObserver<StatusResponse> responseObserver) {
+        try {
+            boolean removed = service.removeItem(request.getItemId());
+            if (removed) {
+                responseObserver.onNext(StatusResponse.newBuilder()
+                        .setResponse("Success")
+                        .build());
+                responseObserver.onCompleted();
+                LOG.info("Item listing [ id={} ] removed successfully", request.getItemId());
+            } else {
+                responseObserver.onError(Status.NOT_FOUND
+                        .withDescription("Item listing with id " + request.getItemId() + " not found")
+                        .asRuntimeException());
+            }
+        } catch (Exception e) {
+            fail(responseObserver, e, "remove item listing");
+        }
+    }
+
     private void fail(StreamObserver<?> responseObserver, Exception e, String action) {
         IllegalArgumentException invalid = findIllegalArgument(e);
         if (invalid != null) {

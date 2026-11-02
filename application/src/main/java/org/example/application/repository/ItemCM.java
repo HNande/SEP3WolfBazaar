@@ -4,6 +4,7 @@ import generated.AddItemListingRequest;
 import generated.ItemListing;
 import generated.ItemSummary;
 import generated.ItemThumbnail;
+import generated.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +22,8 @@ public interface ItemCM {
   List<ItemSummary> getAllItemSummaries();
 
   List<ItemThumbnail> getThumbnails(List<Integer> ids);
+
+  boolean removeItem(int id);
 
   record ItemPage(List<ItemListing> items, String nextPageToken) {
     public boolean hasNext() {

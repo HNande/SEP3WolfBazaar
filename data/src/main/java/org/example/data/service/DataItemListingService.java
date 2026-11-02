@@ -30,6 +30,11 @@ public class DataItemListingService {
         return itemListingDAO.addNewItemListing(dto);
     }
 
+    public boolean removeItem(int id)
+    {
+        return itemListingDAO.removeItemListing(id);
+    }
+
     public Optional<ItemListingResponseDTO> getItemById(int id) {
         return itemListingDAO.getItemById(id);
     }

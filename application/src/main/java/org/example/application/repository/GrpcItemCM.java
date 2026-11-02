@@ -2,6 +2,11 @@ package org.example.application.repository;
 
 import generated.*;
 import generated.ItemListingServiceGrpc.ItemListingServiceBlockingStub;
+import generated.ItemSummary;
+import generated.ItemThumbnail;
+import generated.ListItemListingsRequest;
+import generated.ListItemListingsResponse;
+import generated.ListItemSummariesResponse;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import org.example.application.exception.InvalidRequestException;
@@ -132,7 +137,26 @@ public class GrpcItemCM implements ItemCM {
         }
     }
 
-    public void removeItemListing(RemoveItemListingRequest request){
+    @Override
+    public boolean removeItem(int id) {
+        try {
+            RemoveItemListingRequest request = RemoveItemListingRequest.newBuilder()
+                    .setItemId(id)
+                    .build();
+
+             stub.withDeadlineAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    .removeItemListing(request);
+             return true;
+
+        } catch (StatusRuntimeException e) {
+            if (e.getStatus().getCode() == Status.Code.NOT_FOUND) {
+                return false;
+            }
+            throw translate(e, "remove item " + id);
+        }
+    }
+
+   /* public void removeItemListing(RemoveItemListingRequest request){
         try {
         stub.removeItemListing(request);
         }
@@ -140,7 +164,7 @@ public class GrpcItemCM implements ItemCM {
           throw translate(e,"remove item listing");
         }
 
-    }
+    }*/
     private RuntimeException translate(StatusRuntimeException e, String action) {
         Status status = e.getStatus();
         if (status.getCode() == Status.Code.INVALID_ARGUMENT) {
