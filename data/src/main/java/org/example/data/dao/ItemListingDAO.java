@@ -80,6 +80,41 @@ public class ItemListingDAO {
     return ItemListingDataMapper.toResponseDTO(saved);
   }
 
+  @Transactional
+  public boolean removeItemListing(int id)
+  {
+      Optional<ItemListing> existingOpt = itemListingRepository.findById(id);
+      if (existingOpt.isPresent())
+      {
+          return false;
+      }
+
+      ItemListing listing = existingOpt.get();
+
+      List<Path> filesToDelete = new ArrayList<>();
+      for (ItemPicture picture : listing.getPictures())
+      {
+          if(picture.getFilePath() != null && !picture.getThumbnailPath().isEmpty())
+          {
+              filesToDelete.add(Path.of(picture.getFilePath()));
+          }
+      }
+
+      itemListingRepository.delete(listing);
+      itemListingRepository.flush();
+
+      for(Path path : filesToDelete)
+      {
+          try
+          {
+              Files.deleteIfExists(path);
+          } catch (IOException ignored) {
+
+          }
+      }
+      return true;
+  }
+
   @Transactional(readOnly = true)
   public Optional<ItemListingResponseDTO> getItemById(int id) {
     return itemListingRepository.findById(id).map(ItemListingDataMapper::toResponseDTO);
