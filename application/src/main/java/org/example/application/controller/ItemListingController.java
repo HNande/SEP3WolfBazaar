@@ -47,4 +47,10 @@ public class ItemListingController {
   public ItemListingResponseDTO getItemListingId(@PathVariable int id) {
     return itemListingService.getItemById(id);
   }
+
+  @DeleteMapping("/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void deleteItemListing(@PathVariable int id) {
+    itemListingService.removeItem(id);     // throws Status code 404 on not found
+  }
 }
