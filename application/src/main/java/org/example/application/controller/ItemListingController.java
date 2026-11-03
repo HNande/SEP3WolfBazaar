@@ -6,6 +6,7 @@ import org.example.application.repository.ItemListingResponseDTO;
 import org.example.application.repository.ItemSummaryResponseDTO;
 import org.example.application.repository.ThumbnailResponseDTO;
 import org.example.application.service.ItemListingService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
