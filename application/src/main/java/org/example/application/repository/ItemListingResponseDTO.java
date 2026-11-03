@@ -1,13 +1,18 @@
 package org.example.application.repository;
 
+import generated.Category;
+
+import java.util.List;
+
 public record ItemListingResponseDTO(
     int id,
     String itemName,
     String description,
     int price,
-    AlbumResponseDTO album,
+    List<ImageResponseDTO> imageList,
+    List<Category> categoryList,
     int year,
     int month,
     int day
     ){
-}
+}

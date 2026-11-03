@@ -1,4 +1,4 @@
-package org.example.application.client;
+package org.example.application.config;
 
 import generated.ItemListingServiceGrpc;
 import org.springframework.beans.factory.annotation.Value;
