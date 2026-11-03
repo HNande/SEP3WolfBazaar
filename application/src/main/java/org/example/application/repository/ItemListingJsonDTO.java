@@ -3,6 +3,8 @@ package org.example.application.repository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 
+import java.util.List;
+
 public record ItemListingJsonDTO(
     @NotBlank(message = "Item Name is required")
     @Size(min = ItemListingConstraints.ITEM_NAME_MIN, max = ItemListingConstraints.ITEM_NAME_MAX,
@@ -16,7 +18,7 @@ public record ItemListingJsonDTO(
 
     @Positive(message = "Price must be greater than 0")
     int price,
-     @Valid AlbumJsonDTO album
+     @Valid List<ImageJsonDTO> imageList
 ) {
 
-}
+}
