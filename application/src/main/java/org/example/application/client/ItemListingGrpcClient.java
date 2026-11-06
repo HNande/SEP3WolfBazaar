@@ -4,8 +4,6 @@ import generated.*;
 import generated.ItemListingServiceGrpc.ItemListingServiceBlockingStub;
 import generated.ItemSummary;
 import generated.ItemThumbnail;
-import generated.ListItemListingsRequest;
-import generated.ListItemListingsResponse;
 import generated.ListItemSummariesResponse;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
