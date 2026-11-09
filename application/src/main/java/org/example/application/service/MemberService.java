@@ -1,7 +1,6 @@
 package org.example.application.service;
 
 import generated.AddMemberRequest;
-import org.example.application.exception.InvalidRequestException;
 import org.example.application.client.MemberGrpcClient;
 import org.example.application.repository.MemberConstraints;
 import org.example.application.repository.MemberResponseDTO;
@@ -23,36 +22,31 @@ public class MemberService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    public Optional<String> validatePassword(String password) {
+        if (password.length() < MemberConstraints.PASSWORD_MIN) {
+            return Optional.of(
+                    "Password must be at least " + MemberConstraints.PASSWORD_MIN + " characters long");
+        }
+        if (password.getBytes(StandardCharsets.UTF_8).length > MemberConstraints.PASSWORD_MAX_BYTES) {
+            return Optional.of(
+                    "Password must be at most " + MemberConstraints.PASSWORD_MAX_BYTES + " bytes long");
+        }
+        return Optional.empty();
+    }
+
     public Optional<MemberResponseDTO> register(RegisterMemberJsonDTO dto) {
-        String firstName = dto.firstName().trim();
-        String lastName = dto.lastName().trim();
-        String username = dto.username().trim();
-        String password = dto.password();
-
-        validatePassword(password);
-
         AddMemberRequest request = AddMemberRequest.newBuilder()
-                .setFirstName(firstName)
-                .setLastName(lastName)
-                .setMemberName(username)
-                .setPassword(passwordEncoder.encode(password))
+                .setFirstName(dto.firstName().trim())
+                .setLastName(dto.lastName().trim())
+                .setMemberName(dto.username().trim())
+                .setPassword(passwordEncoder.encode(dto.password()))
                 .build();
 
         if (!memberClient.addMember(request)) {
             return Optional.empty();
         }
 
-        return Optional.of(new MemberResponseDTO(firstName, lastName, username));
-    }
-
-    private static void validatePassword(String password) {
-        if (password.length() < MemberConstraints.PASSWORD_MIN) {
-            throw new InvalidRequestException(
-                    "Password must be at least " + MemberConstraints.PASSWORD_MIN + " characters long");
-        }
-        if (password.getBytes(StandardCharsets.UTF_8).length > MemberConstraints.PASSWORD_MAX_BYTES) {
-            throw new InvalidRequestException(
-                    "Password must be at most " + MemberConstraints.PASSWORD_MAX_BYTES + " bytes long");
-        }
+        return Optional.of(new MemberResponseDTO(
+                request.getFirstName(), request.getLastName(), request.getMemberName()));
     }
 }

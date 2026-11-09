@@ -21,15 +21,21 @@ public class MemberController {
         this.memberService = memberService;
     }
 
-    //Register a guest as a new member. 201 if created, 409 if the username is taken.
+    // Register a guest as a new member. 201 if created, 400 if invalid, 409 if the username is taken
     @PostMapping("")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterMemberJsonDTO form) {
-        Optional<MemberResponseDTO> member = memberService.register(form);
+        Optional<String> passwordError = memberService.validatePassword(form.password());
+        if (passwordError.isPresent()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), passwordError.get()));
+        }
 
+        Optional<MemberResponseDTO> member = memberService.register(form);
         if (member.isEmpty()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(new ErrorResponse(HttpStatus.CONFLICT.value(), "Username is already taken"));
         }
+
         return ResponseEntity.status(HttpStatus.CREATED).body(member.get());
     }
 }
