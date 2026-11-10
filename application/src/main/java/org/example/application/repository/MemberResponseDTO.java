@@ -1,4 +1,8 @@
 package org.example.application.repository;
 
-public class MemberResponseDTO {
+public record MemberResponseDTO(
+        String firstName,
+        String lastName,
+        String username
+) {
 }

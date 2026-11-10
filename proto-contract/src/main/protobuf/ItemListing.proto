@@ -118,6 +118,8 @@ message AddMemberRequest{
   string memberName = 1;
   string memberEmail = 2;
   string password = 3;
+  string firstName = 4;
+  string lastName = 5;
 }
 message AddConversationRequest{
   repeated int32 participant_ids = 1;
