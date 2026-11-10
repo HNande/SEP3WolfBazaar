@@ -77,6 +77,9 @@ public class ItemListing {
     public int getPrice() { return price; }
     public void setPrice(int price) { this.price = price; }
 
+    public Set<Category> getCategories() { return categories; }
+    public void setCategories(Set<Category> categories) { this.categories = categories; }
+
     public LocalDate getListDate() { return listDate; }
     public void setListDate(LocalDate listDate) { this.listDate = listDate; }
 
