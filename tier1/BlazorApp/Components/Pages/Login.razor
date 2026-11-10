@@ -1,0 +1,79 @@
+@page "/login"
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager Navigation
+
+<div class="auth-wrapper">
+    <AuthorizeView>
+        <Authorized>
+            <div class="auth-card text-center">
+                <h1 class="auth-title">Hello, @context.User.Identity?.Name</h1>
+                <p class="auth-hint">You are already logged in.</p>
+                <a href="/" class="auth-pill">To the catalogue</a>
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <div class="auth-card">
+                <h1 class="auth-title">Login</h1>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="auth-error">@errorMessage</div>
+                }
+
+                <form @onsubmit="LoginAsync" @onsubmit:preventDefault>
+                    <div class="mb-3">
+                        <label for="login-name">User name</label>
+                        <input id="login-name" type="text" class="auth-input" @bind="userName" autocomplete="username" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="login-password">Password</label>
+                        <input id="login-password" type="password" class="auth-input" @bind="password" autocomplete="current-password" />
+                    </div>
+
+                    <div class="auth-actions">
+                        <a href="/" class="auth-pill auth-pill-outline">Cancel</a>
+                        <button type="submit" class="auth-pill" disabled="@isSubmitting">
+                            @(isSubmitting ? "Logging in..." : "Log in")
+                        </button>
+                    </div>
+                </form>
+
+                <p class="auth-switch">No account yet? <a href="register">Register</a></p>
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>
+
+@code {
+    private string userName = string.Empty;
+    private string password = string.Empty;
+    private string? errorMessage;
+    private bool isSubmitting;
+
+    private async Task LoginAsync()
+    {
+        errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrEmpty(password))
+        {
+            errorMessage = "Enter user name and password.";
+            return;
+        }
+
+        try
+        {
+            isSubmitting = true;
+            await ((SimpleAuthProvider)AuthProvider).Login(userName, password);
+            Navigation.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

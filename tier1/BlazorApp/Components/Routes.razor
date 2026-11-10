@@ -1,0 +1,21 @@
+<CascadingAuthenticationState>
+    <Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+                <NotAuthorized>
+                    <div class="auth-wrapper">
+                        <div class="auth-card text-center">
+                            <h1 class="auth-title">Login required</h1>
+                            <p class="auth-hint">Only registered users can open this page.</p>
+                            <div class="auth-actions justify-content-center">
+                                <a href="login" class="auth-pill">Login</a>
+                                <a href="register" class="auth-pill auth-pill-outline">Register</a>
+                            </div>
+                        </div>
+                    </div>
+                </NotAuthorized>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="routeData" Selector="h1"/>
+        </Found>
+    </Router>
+</CascadingAuthenticationState>

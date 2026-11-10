@@ -1,0 +1,88 @@
+@page "/register"
+@inject IUserService UserService
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager Navigation
+
+<div class="auth-wrapper">
+    <AuthorizeView>
+        <Authorized>
+            <div class="auth-card text-center">
+                <h1 class="auth-title">Hello, @context.User.Identity?.Name</h1>
+                <p class="auth-hint">You are already registered and logged in.</p>
+                <a href="/" class="auth-pill">To the catalogue</a>
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <div class="auth-card">
+                <h1 class="auth-title">Register</h1>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="auth-error">@errorMessage</div>
+                }
+
+                <form @onsubmit="RegisterAsync" @onsubmit:preventDefault>
+                    <div class="mb-3">
+                        <label for="reg-name">User name</label>
+                        <input id="reg-name" type="text" class="auth-input" @bind="userName" autocomplete="username" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="reg-password">Password</label>
+                        <input id="reg-password" type="password" class="auth-input" @bind="password" autocomplete="new-password" />
+                    </div>
+
+                    <div class="auth-actions">
+                        <a href="/" class="auth-pill auth-pill-outline">Cancel</a>
+                        <button type="submit" class="auth-pill" disabled="@isSubmitting">
+                            @(isSubmitting ? "Creating..." : "Register")
+                        </button>
+                    </div>
+                </form>
+
+                <p class="auth-switch">Already have an account? <a href="login">Log in</a></p>
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>
+
+@code {
+    private string userName = string.Empty;
+    private string password = string.Empty;
+    private string? errorMessage;
+    private bool isSubmitting;
+
+    private async Task RegisterAsync()
+    {
+        errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(userName))
+        {
+            errorMessage = "User name cannot be empty.";
+            return;
+        }
+
+        if (string.IsNullOrEmpty(password))
+        {
+            errorMessage = "Enter a password.";
+            return;
+        }
+
+        try
+        {
+            isSubmitting = true;
+            await UserService.RegisterAsync(new CreateUserDto { Name = userName, Password = password });
+
+            await ((SimpleAuthProvider)AuthProvider).Login(userName, password);
+            Navigation.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

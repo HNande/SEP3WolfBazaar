@@ -1,0 +1,137 @@
+@page "/create_item"
+@rendermode InteractiveServer
+@inject IItemService ItemService
+@inject NavigationManager Navigation
+
+<h3>Create New Item</h3>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<EditForm Model="@itemDto" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>Name (8 - 200 chars):</label>
+        <InputText class="form-control" @bind-Value="itemDto.Name" />
+        <ValidationMessage For="@(() => itemDto.Name)" />
+    </div>
+
+    <div class="mb-3">
+        <label>Description (20 - 500 chars):</label>
+        <InputTextArea class="form-control" @bind-Value="itemDto.Description" />
+        <ValidationMessage For="@(() => itemDto.Description)" />
+    </div>
+
+    <div class="mb-3">
+        <label>Price:</label>
+        <InputNumber class="form-control" @bind-Value="itemDto.Price" />
+        <ValidationMessage For="@(() => itemDto.Price)" />
+    </div>
+
+    <div class="mb-3">
+        <label>Pictures (Max 4, PNG/JPEG, up to 2048x2048):</label>
+        <InputFile OnChange="LoadFiles" class="form-control" multiple accept=".png, .jpeg, .jpg" />
+        <small class="text-muted">Selected files: @selectedFiles.Count / 4</small>
+    </div>
+
+    <button type="submit" class="btn btn-success" disabled="@isSubmitting">
+        @if (isSubmitting)
+        {
+            <span>Saving...</span>
+        }
+        else
+        {
+            <span>Create Item</span>
+        }
+    </button>
+</EditForm>
+
+@code {
+    private ItemDto itemDto = new();
+    private List<IBrowserFile> selectedFiles = new();
+    private string? errorMessage;
+    private bool isSubmitting;
+
+    private const int MaxAllowedFiles = 4;
+    private const long MaxFileSize = 1024 * 1024 * 10;
+    private const int MaxWidth = 2048;
+    private const int MaxHeight = 2048;
+
+    private async Task LoadFiles(InputFileChangeEventArgs e)
+    {
+        errorMessage = null;
+        selectedFiles.Clear();
+
+        IReadOnlyList<IBrowserFile> files;
+
+        try
+        {
+            files = e.GetMultipleFiles(MaxAllowedFiles);
+        }
+        catch (InvalidOperationException)
+        {
+            errorMessage = $"You can only upload a maximum of {MaxAllowedFiles} files.";
+            return;
+        }
+
+        foreach (var file in files)
+        {
+            if (!file.ContentType.Equals("image/jpeg", StringComparison.OrdinalIgnoreCase) &&
+                !file.ContentType.Equals("image/png", StringComparison.OrdinalIgnoreCase))
+            {
+                errorMessage = $"File '{file.Name}' has an invalid format. Only JPG/PNG allowed.";
+                selectedFiles.Clear();
+                return;
+            }
+
+            if (file.Size > MaxFileSize)
+            {
+                errorMessage = $"File '{file.Name}' is too large. Max size allowed is {MaxFileSize / (1024 * 1024)} MB.";
+                selectedFiles.Clear();
+                return;
+            }
+
+            try
+            {
+                var resizedFile = await file.RequestImageFileAsync(file.ContentType, MaxWidth, MaxHeight);
+                selectedFiles.Add(resizedFile);
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Error processing image {file.Name}: {ex.Message}";
+                selectedFiles.Clear();
+                return;
+            }
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (selectedFiles.Count == 0)
+        {
+            errorMessage = "Please upload at least one picture.";
+            return;
+        }
+
+        errorMessage = null;
+        isSubmitting = true;
+
+        try
+        {
+            await ItemService.CreateItemAsync(itemDto, selectedFiles);
+            Navigation.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}
