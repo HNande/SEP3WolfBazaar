@@ -24,7 +24,7 @@ public class DataItemListingService {
     }
 
     public ItemListingResponseDTO addItem(ItemListingDataDTO dto) {
-        if (dto.album() == null || dto.album().images().isEmpty()) {
+        if (dto.album() == null || dto.album().images() == null || dto.album().images().isEmpty()) {
             throw new IllegalArgumentException("A listing needs at least one picture");
         }
         return itemListingDAO.addNewItemListing(dto);

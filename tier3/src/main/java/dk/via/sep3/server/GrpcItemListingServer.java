@@ -59,6 +59,7 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
         }
     }
 
+    @Override
     public void getListItemSummaries(ListItemListingSummaryRequest request,
         StreamObserver<ListItemSummariesResponse> responseObserver) {
         try {
