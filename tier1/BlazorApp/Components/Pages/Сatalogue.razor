@@ -1,0 +1,285 @@
+@page "/"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject IItemService ItemService
+@inject NavigationManager Navigation
+
+<div class="page-container">
+    <div class="header-row">
+        <h1 class="page-title">Catalogue</h1>
+        <AuthorizeView>
+            <Authorized>
+                <a href="create_item" class="action-button">
+                    Create Item Listing
+                </a>
+            </Authorized>
+            <NotAuthorized>
+                <div class="action-button-close">
+                    Login to create
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
+    </div>
+
+    <div class="main-card mb-4 p-3 rounded shadow-sm">
+        <div class="search-box mb-2">
+            <span>A search bar could go here</span>
+        </div>
+        <div class="tags-box">
+            <span>Tags for filtering will go here</span>
+        </div>
+    </div>
+
+    <div class="table-container">
+        @if (isLoading)
+        {
+            <div class="d-flex justify-content-center p-5">
+                <div class="spinner-border text-info" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(loadErrorMessage))
+        {
+            <div class="alert alert-danger" role="alert">
+                <strong>Error:</strong> @loadErrorMessage
+                <button class="btn btn-sm btn-outline-danger ms-3" @onclick="ReloadItems">Try Again</button>
+            </div>
+        }
+        else if (allItems == null || !allItems.Any())
+        {
+            <p class="text-muted">No items found.</p>
+        }
+        else
+        {
+            @if (!string.IsNullOrEmpty(actionErrorMessage))
+            {
+                <div class="alert alert-danger w-100" role="alert">@actionErrorMessage</div>
+            }
+
+            <div class="custom-items-grid">
+                @foreach (var item in displayedItems)
+                {
+                    <div class="item-card-wrapper" @key="item.Id">
+                        <div class="card item-card p-3 shadow-sm h-100">
+
+                            @if (!string.IsNullOrEmpty(item.ImageUrl))
+                            {
+                                <img src="@item.ImageUrl"
+                                     class="card-img-top mb-2 rounded item-image"
+                                     alt="@item.Name" />
+                            }
+                            else
+                            {
+                                <div class="no-image-placeholder rounded mb-2">
+                                    <span>No Image Yet</span>
+                                </div>
+                            }
+
+                            <h3 class="h5 item-title mt-2">@item.Name</h3>
+                            <p class="item-description">@item.Description</p>
+                            <p class="mb-0 item-price">
+                                <strong>Price:</strong> $@item.Price.ToString("N0")
+                            </p>
+
+                            <div class="item-actions mt-auto pt-3">
+                                @if (confirmDeleteId == item.Id)
+                                {
+                                    <span class="delete-confirm-text">Delete?</span>
+                                    <button class="btn btn-sm btn-danger"
+                                            disabled="@(deletingId == item.Id)"
+                                            @onclick="() => DeleteItemAsync(item.Id)">
+                                        @(deletingId == item.Id ? "Deleting..." : "Yes")
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary"
+                                            disabled="@(deletingId == item.Id)"
+                                            @onclick="CancelDelete">
+                                        Cancel
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm delete-btn"
+                                            disabled="@(deletingId != null)"
+                                            @onclick="() => AskDelete(item.Id)">
+                                        Delete
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @if (allItems.Count > displayedItems.Count)
+            {
+                <div class="text-center mt-4 w-100">
+                    <button class="btn load-more-btn" @onclick="LoadMore">Load More (10)</button>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private const int PageSize = 10;
+
+    private List<ItemSummaryDto> allItems = new();
+    private List<ItemSummaryDto> displayedItems = new();
+
+    private readonly Dictionary<int, string> thumbnailCache = new();
+
+    private int pageSize = PageSize;
+    private bool isLoading = true;
+    private string? loadErrorMessage;
+
+    private int? confirmDeleteId;
+    private int? deletingId;
+    private string? actionErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            isLoading = true;
+            loadErrorMessage = null;
+            actionErrorMessage = null;
+
+            var result = await ItemService.GetItemSummariesAsync();
+            allItems = result.ToList();
+
+            pageSize = PageSize;
+            UpdateDisplayedItems();
+        }
+        catch (Exception ex)
+        {
+            loadErrorMessage = "Failed to load catalogue from server. Please check your connection.";
+            Console.WriteLine($"Error loading items: {ex.Message}");
+            isLoading = false;
+            return;
+        }
+
+        isLoading = false;
+
+        StateHasChanged();
+
+        await LoadThumbnailsAsync(displayedItems);
+    }
+
+    private void UpdateDisplayedItems()
+    {
+        displayedItems = allItems.Take(pageSize).ToList();
+    }
+
+    private async Task LoadMore()
+    {
+        var previousCount = displayedItems.Count;
+
+        pageSize += PageSize;
+        UpdateDisplayedItems();
+
+        var newItems = displayedItems.Skip(previousCount).ToList();
+        StateHasChanged();
+
+        await LoadThumbnailsAsync(newItems);
+    }
+
+    private async Task LoadThumbnailsAsync(IEnumerable<ItemSummaryDto> items)
+    {
+        var batch = items.ToList();
+
+        ApplyCachedThumbnails(batch);
+
+        var idsToFetch = batch
+            .Where(i => !thumbnailCache.ContainsKey(i.Id))
+            .Select(i => i.Id)
+            .ToList();
+
+        if (idsToFetch.Count == 0)
+            return;
+
+        try
+        {
+            var thumbnails = await ItemService.GetThumbnailsAsync(idsToFetch);
+
+            foreach (var (id, dataUrl) in thumbnails)
+            {
+                thumbnailCache[id] = dataUrl;
+            }
+
+            ApplyCachedThumbnails(batch);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading thumbnails: {ex.Message}");
+        }
+    }
+
+    private void ApplyCachedThumbnails(IEnumerable<ItemSummaryDto> items)
+    {
+        foreach (var item in items)
+        {
+            if (thumbnailCache.TryGetValue(item.Id, out var dataUrl))
+            {
+                item.ImageUrl = dataUrl;
+            }
+        }
+    }
+
+    private async Task ReloadItems()
+    {
+        await LoadDataAsync();
+    }
+
+    private void AskDelete(int id)
+    {
+        actionErrorMessage = null;
+        confirmDeleteId = id;
+    }
+
+    private void CancelDelete()
+    {
+        confirmDeleteId = null;
+    }
+
+    private async Task DeleteItemAsync(int id)
+    {
+        deletingId = id;
+        actionErrorMessage = null;
+
+        try
+        {
+            await ItemService.DeleteItemAsync(id);
+            await RemoveFromListAsync(id);
+        }
+        catch (KeyNotFoundException)
+        {
+            await RemoveFromListAsync(id);
+        }
+        catch (Exception ex)
+        {
+            actionErrorMessage = $"Could not delete item: {ex.Message}";
+        }
+        finally
+        {
+            deletingId = null;
+            confirmDeleteId = null;
+        }
+    }
+
+    private async Task RemoveFromListAsync(int id)
+    {
+        allItems.RemoveAll(i => i.Id == id);
+        thumbnailCache.Remove(id);
+
+        var shownBefore = displayedItems.Select(i => i.Id).ToHashSet();
+        UpdateDisplayedItems();
+
+        var newlyShown = displayedItems.Where(i => !shownBefore.Contains(i.Id)).ToList();
+        await LoadThumbnailsAsync(newlyShown);
+    }
+}

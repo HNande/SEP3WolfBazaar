@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "1aXfp+rBAds=",
+  "success": true,
+  "projectFilePath": "D:\\Univer\\3rd Semester\\Sep3\\FrontEnd\\BlazorApp\\BlazorApp.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\78max\\.nuget\\packages\\microsoft.aspnetcore.app.internal.assets\\10.0.11\\microsoft.aspnetcore.app.internal.assets.10.0.11.nupkg.sha512",
+    "C:\\Users\\78max\\.nuget\\packages\\sixlabors.imagesharp\\4.1.3\\sixlabors.imagesharp.4.1.3.nupkg.sha512",
+    "C:\\Users\\78max\\.nuget\\packages\\system.io.hashing\\8.0.0\\system.io.hashing.8.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}
