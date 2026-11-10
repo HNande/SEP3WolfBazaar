@@ -1,16 +1,17 @@
-package org.example.application.repository;
+package org.example.application.client;
 
 import generated.*;
 import generated.ItemListingServiceGrpc.ItemListingServiceBlockingStub;
 import generated.ItemSummary;
 import generated.ItemThumbnail;
-import generated.ListItemListingsRequest;
-import generated.ListItemListingsResponse;
 import generated.ListItemSummariesResponse;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import org.example.application.exception.InvalidRequestException;
 import org.example.application.exception.UpstreamException;
+import org.example.application.repository.ItemListingJsonDTO;
+import org.example.application.repository.ItemListingMapper;
+import org.example.application.repository.ItemPageResponseDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
@@ -21,9 +22,9 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Repository
-public class GrpcItemCM implements ItemCM {
+public class ItemListingGrpcClient  {
 
-    private static final Logger LOG = LoggerFactory.getLogger(GrpcItemCM.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ItemListingGrpcClient.class);
     private static final long TIMEOUT_SECONDS = 10;
     private static final long THUMBNAIL_TIMEOUT_SECONDS = 30;
     private static final int DEFAULT_PAGE_SIZE = 50;
@@ -31,22 +32,20 @@ public class GrpcItemCM implements ItemCM {
 
     private final ItemListingServiceBlockingStub stub;
 
-    public GrpcItemCM(ItemListingServiceBlockingStub stub) {
+    public ItemListingGrpcClient(ItemListingServiceBlockingStub stub) {
         this.stub = stub;
     }
 
-    @Override
-    public ItemListing addItem(AddItemListingRequest request) {
+    public boolean addItem(ItemListingJsonDTO dto) {
         try {
-            return stub.withDeadlineAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                    .addItemListing(request)
-                    .getItemlisting();
+            stub.withDeadlineAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS).addItemListing(ItemListingMapper.toRequest(dto));
+            return true;
         } catch (StatusRuntimeException e) {
-            throw translate(e, "add item");
+            translate(e, "add item");
+            return false;
         }
     }
 
-    @Override
     public Optional<ItemListing> getItemById(int id) {
         try {
             GetItemListingRequest request = GetItemListingRequest.newBuilder()
@@ -67,51 +66,34 @@ public class GrpcItemCM implements ItemCM {
         }
     }
 
-    @Override
-    public ItemPage getItems(int pageSize, String pageToken) {
+    public ItemPageResponseDTO getItems(int pageSize, String pageToken) {
         try {
-            ListItemListingsRequest request = ListItemListingsRequest.newBuilder()
+            ListItemListingSummaryRequest request = ListItemListingSummaryRequest.newBuilder()
                     .setPageSize(pageSize > 0 ? pageSize : DEFAULT_PAGE_SIZE)
                     .setPageToken(pageToken == null ? "" : pageToken)
                     .build();
 
-            ListItemListingsResponse response = stub.withDeadlineAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                    .listItemListings(request);
-
-            return new ItemPage(response.getItemsList(), response.getNextPageToken());
+            ListItemSummariesResponse response = stub.withDeadlineAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS).getListItemSummaries(request);
+            return new ItemPageResponseDTO(response.getItemsList(), response.getNextPageToken());
 
         } catch (StatusRuntimeException e) {
             throw translate(e, "list items");
         }
     }
 
-    @Override
-    public List<ItemListing> getAllItems() {
-        List<ItemListing> allItems = new ArrayList<>();
-        String token = "";
-        do {
-            ItemPage page = getItems(DEFAULT_PAGE_SIZE, token);
-            allItems.addAll(page.items());
-            token = page.nextPageToken();
-        } while (token != null && !token.isEmpty());
-
-        return allItems;
-    }
-
-    @Override
     public List<ItemSummary> getAllItemSummaries() {
         List<ItemSummary> all = new ArrayList<>();
         String token = "";
         try {
             do {
-                ListItemListingsRequest request = ListItemListingsRequest.newBuilder()
+                ListItemListingSummaryRequest request = ListItemListingSummaryRequest.newBuilder()
                         .setPageSize(SUMMARY_PAGE_SIZE)
                         .setPageToken(token)
                         .build();
 
                 ListItemSummariesResponse response = stub
                         .withDeadlineAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                        .listItemSummaries(request);
+                        .getListItemSummaries(request);
 
                 all.addAll(response.getItemsList());
                 token = response.getNextPageToken();
@@ -122,10 +104,9 @@ public class GrpcItemCM implements ItemCM {
         return all;
     }
 
-    @Override
     public List<ItemThumbnail> getThumbnails(List<Integer> ids) {
         try {
-            GetItemThumbnailsRequest request = GetItemThumbnailsRequest.newBuilder()
+            ListItemThumbnailRequest request = ListItemThumbnailRequest.newBuilder()
                     .addAllItemIds(ids)
                     .build();
 
@@ -137,7 +118,6 @@ public class GrpcItemCM implements ItemCM {
         }
     }
 
-    @Override
     public boolean removeItem(int id) {
         try {
             RemoveItemListingRequest request = RemoveItemListingRequest.newBuilder()
@@ -155,16 +135,6 @@ public class GrpcItemCM implements ItemCM {
             throw translate(e, "remove item " + id);
         }
     }
-
-   /* public void removeItemListing(RemoveItemListingRequest request){
-        try {
-        stub.removeItemListing(request);
-        }
-        catch (StatusRuntimeException e) {
-          throw translate(e,"remove item listing");
-        }
-
-    }*/
     private RuntimeException translate(StatusRuntimeException e, String action) {
         Status status = e.getStatus();
         if (status.getCode() == Status.Code.INVALID_ARGUMENT) {

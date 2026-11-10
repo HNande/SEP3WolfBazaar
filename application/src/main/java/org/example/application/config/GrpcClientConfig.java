@@ -1,6 +1,7 @@
-package org.example.application.client;
+package org.example.application.config;
 
 import generated.ItemListingServiceGrpc;
+import generated.MemberServiceGrpc;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,5 +18,12 @@ public class GrpcClientConfig {
         return ItemListingServiceGrpc.newBlockingStub(channels.createChannel(target))
                 .withMaxInboundMessageSize(maxMessageBytes)
                 .withMaxOutboundMessageSize(maxMessageBytes);
+    }
+
+    @Bean
+    MemberServiceGrpc.MemberServiceBlockingStub memberStub(
+            GrpcChannelFactory channels,
+            @Value("${wolfbazaar.grpc.target:localhost:9090}") String target) {
+        return MemberServiceGrpc.newBlockingStub(channels.createChannel(target));
     }
 }

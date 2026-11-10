@@ -3,7 +3,9 @@ package org.example.data.entities;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "item_listing")
@@ -25,6 +27,13 @@ public class ItemListing {
 
     @Column(name = "list_date", nullable = false)
     private LocalDate listDate;
+
+    @ManyToMany
+    @JoinTable(
+        name = "item_listing_category",
+        joinColumns = @JoinColumn(name = "item_id"),
+        inverseJoinColumns = @JoinColumn(name = "category_id"))
+    private Set<Category> categories = new HashSet<>();
 
     @OneToMany(mappedBy = "itemListing", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("pictureId ASC")
@@ -73,4 +82,4 @@ public class ItemListing {
 
     public List<ItemPicture> getPictures() { return pictures; }
     public void setPictures(List<ItemPicture> pictures) { this.pictures = pictures; }
-}
+}

@@ -9,7 +9,7 @@ service ItemListingService {
   rpc GetItemListing (GetItemListingRequest) returns (ItemListingResponse);
   rpc UpdateItemListing (UpdateItemListingRequest) returns (google.protobuf.Empty);
   rpc RemoveItemListing (RemoveItemListingRequest) returns (google.protobuf.Empty);
-  rpc GetListItemSummaries(ListItemListingRequest) returns (ListItemSummariesResponse);
+  rpc GetListItemSummaries(ListItemListingSummaryRequest) returns (ListItemSummariesResponse);
   rpc GetItemThumbnails(ListItemThumbnailRequest) returns (GetItemThumbnailsResponse);
 }
 service MemberService{
@@ -80,7 +80,7 @@ message ItemListing {
   int32 price = 5;
   repeated Image images = 6;
   repeated Category categories = 7;
-  Date created_at = 8;
+  Date date = 8;
 }
 message Member {
   int32 id = 1;
@@ -118,6 +118,8 @@ message AddMemberRequest{
   string memberName = 1;
   string memberEmail = 2;
   string password = 3;
+  string firstName = 4;
+  string lastName = 5;
 }
 message AddConversationRequest{
   repeated int32 participant_ids = 1;
@@ -137,7 +139,7 @@ message GetItemListingRequest {
 message ListItemThumbnailRequest {
   repeated int32 item_ids = 1;
 }
-message ListItemListingRequest  {
+message ListItemListingSummaryRequest  {
   int32 page_size = 1;
   string page_token = 2;
 }

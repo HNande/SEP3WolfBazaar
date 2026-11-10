@@ -1,8 +1,8 @@
 package org.example.data.mappers;
 
 import com.google.protobuf.ByteString;
-import generated.*;
 import generated.Date;
+import generated.*;
 import org.example.data.dto.*;
 import org.example.data.entities.ItemPicture;
 import org.slf4j.Logger;
@@ -21,11 +21,14 @@ public class ItemListingDataMapper {
   private static final Logger LOG = LoggerFactory.getLogger(ItemListingDataMapper.class);
 
   public static ItemListingDataDTO toDomainDTO(AddItemListingRequest request) {
+    List<ImageDataDTO> images = request.getImagesList().stream()
+        .map(ItemListingDataMapper::toImageDTO)
+        .toList();
     return new ItemListingDataDTO(
-            request.getItemName(),
-            request.getDescription(),
-            request.getPrice(),
-            toAlbumDTO(request.getAlbum()));
+        request.getItemName(),
+        request.getDescription(),
+        request.getPrice(),
+        new AlbumDataDTO(request.getItemName() + " Album", images));
   }
 
   public static ItemListingResponseDTO toResponseDTO(
@@ -76,58 +79,42 @@ public class ItemListingDataMapper {
   }
 
   public static ItemListing toProtoListing(ItemListingResponseDTO dto) {
-    return ItemListing.newBuilder()
-            .setId(dto.id())
-            .setItemName(orEmpty(dto.itemName()))
-            .setDescription(orEmpty(dto.description()))
-            .setPrice(dto.price())
-            .setAlbum(toProto(dto.album()))
-            .setDate(Date.newBuilder()
-                    .setYear(dto.year())
-                    .setMonth(dto.month())
-                    .setDay(dto.day())
-                    .build())
-            .build();
-  }
+    ItemListing.Builder builder = ItemListing.newBuilder()
+        .setId(dto.id())
+        .setItemName(orEmpty(dto.itemName()))
+        .setDescription(orEmpty(dto.description()))
+        .setPrice(dto.price())
+        .setCreatedAt(Date.newBuilder()
+            .setYear(dto.year())
+            .setMonth(dto.month())
+            .setDay(dto.day())
+            .build());
 
-  private static AlbumDataDTO toAlbumDTO(Album album) {
-    return new AlbumDataDTO(
-            album.getTitle(),
-            album.getImagesList().stream()
-                    .map(ItemListingDataMapper::toImageDTO)
-                    .toList());
-  }
-
-  private static ImageDataDTO toImageDTO(Image image) {
-    return new ImageDataDTO(
-            image.getName(),
-            image.getFiletype().toString(),
-            image.getWidth(),
-            image.getHeight(),
-            image.getData().toByteArray());
-  }
-
-  private static Album toProto(AlbumDataDTO dto) {
-    Album.Builder builder = Album.newBuilder()
-            .setTitle(orEmpty(dto.title()));
-
-    if (dto.images() != null) {
-      builder.addAllImages(
-              dto.images().stream()
-                      .map(ItemListingDataMapper::toProto)
-                      .toList());
+    if (dto.album() != null && dto.album().images() != null) {
+      builder.addAllImages(dto.album().images().stream()
+          .map(ItemListingDataMapper::toProto)
+          .toList());
     }
     return builder.build();
   }
 
+  private static ImageDataDTO toImageDTO(Image image) {
+    return new ImageDataDTO(
+        image.getName(),
+        fromProtoFileType(image.getFiletype()),
+        image.getWidth(),
+        image.getHeight(),
+        image.getData().toByteArray());
+  }
+
   private static Image toProto(ImageDataDTO dto) {
     return Image.newBuilder()
-            .setName(orEmpty(dto.name()))
-            .setFiletype(ImageFileType.valueOf(dto.filetype()))
-            .setWidth(dto.width())
-            .setHeight(dto.height())
-            .setData(ByteString.copyFrom(dto.data()))
-            .build();
+        .setName(orEmpty(dto.name()))
+        .setFiletype(toProtoFileType(dto.filetype()))
+        .setWidth(dto.width())
+        .setHeight(dto.height())
+        .setData(ByteString.copyFrom(dto.data()))
+        .build();
   }
 
   private static String orEmpty(String value) {
@@ -152,11 +139,31 @@ public class ItemListingDataMapper {
 
   public static ItemThumbnail toProtoThumbnail(ThumbnailDataDTO dto) {
     return ItemThumbnail.newBuilder()
-            .setItemId(dto.itemId())
-            .setFiletype(ImageFileType.valueOf(dto.fileType().name()))
-            .setWidth(dto.width())
-            .setHeight(dto.height())
-            .setData(ByteString.copyFrom(dto.bytes()))
-            .build();
+        .setItemId(dto.itemId())
+        .setFiletype(toProtoFileType(dto.fileType().name()))
+        .setWidth(dto.width())
+        .setHeight(dto.height())
+        .setData(ByteString.copyFrom(dto.bytes()))
+        .build();
   }
+
+  private static ImageFileType toProtoFileType(String name) {
+    if (name == null) return ImageFileType.IMAGE_FILE_TYPE_PNG;
+    return switch (name.toUpperCase()) {
+      case "JPG" -> ImageFileType.IMAGE_FILE_TYPE_JPG;
+      case "JPEG" -> ImageFileType.IMAGE_FILE_TYPE_JPEG;
+      case "PNG" -> ImageFileType.IMAGE_FILE_TYPE_PNG;
+      default -> ImageFileType.IMAGE_FILE_TYPE_UNSPECIFIED;
+    };
+  }
+
+  private static String fromProtoFileType(ImageFileType type) {
+    return switch (type) {
+      case IMAGE_FILE_TYPE_JPG -> "JPG";
+      case IMAGE_FILE_TYPE_JPEG -> "JPEG";
+      default -> "PNG";
+    };
+  }
+
+
 }

@@ -1,9 +1,9 @@
 package org.example.data.server;
 
+import com.google.protobuf.Empty;
 import generated.*;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import org.example.data.dao.ItemListingDAO;
 import org.example.data.dao.ItemSummaryDAO;
 import org.example.data.dto.ItemListingResponseDTO;
 import org.example.data.dto.ThumbnailDataDTO;
@@ -28,14 +28,14 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
 
     @Override
     public void addItemListing(AddItemListingRequest request,
-                               StreamObserver<ItemListingResponse> responseObserver) {
+        StreamObserver<Empty> responseObserver) {
         try {
             ItemListingResponseDTO created =
-                    service.addItem(ItemListingDataMapper.toDomainDTO(request));
-            responseObserver.onNext(ItemListingDataMapper.toResponse(created));
+                service.addItem(ItemListingDataMapper.toDomainDTO(request));
+            responseObserver.onNext(Empty.getDefaultInstance());
             responseObserver.onCompleted();
             LOG.info("Item listing [ id={}, name={} ] added successfully",
-                    created.id(), created.itemName());
+                created.id(), created.itemName());
         } catch (Exception e) {
             fail(responseObserver, e, "add item listing");
         }
@@ -43,7 +43,7 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
 
     @Override
     public void getItemListing(GetItemListingRequest request,
-                               StreamObserver<ItemListingResponse> responseObserver) {
+        StreamObserver<ItemListingResponse> responseObserver) {
         try {
             Optional<ItemListingResponseDTO> item = service.getItemById(request.getId());
             if (item.isPresent()) {
@@ -51,8 +51,8 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
                 responseObserver.onCompleted();
             } else {
                 responseObserver.onError(Status.NOT_FOUND
-                        .withDescription("Item listing with id " + request.getId() + " not found")
-                        .asRuntimeException());
+                    .withDescription("Item listing with id " + request.getId() + " not found")
+                    .asRuntimeException());
             }
         } catch (Exception e) {
             fail(responseObserver, e, "get item listing");
@@ -60,37 +60,18 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
     }
 
     @Override
-    public void listItemListings(ListItemListingsRequest request,
-                                 StreamObserver<ListItemListingsResponse> responseObserver) {
+    public void getListItemSummaries(ListItemListingRequest request,
+        StreamObserver<ListItemSummariesResponse> responseObserver) {
         try {
-            ItemListingDAO.ItemListingPage page =
-                    service.getItems(request.getPageSize(), request.getPageToken());
-            responseObserver.onNext(ListItemListingsResponse.newBuilder()
-                    .addAllItems(page.items().stream()
-                            .map(ItemListingDataMapper::toProtoListing)
-                            .toList())
-                    .setNextPageToken(page.nextPageToken())
-                    .build());
-            responseObserver.onCompleted();
-        } catch (Exception e) {
-            fail(responseObserver, e, "list item listings");
-        }
-    }
+            ItemSummaryDAO.ItemSummaryPage page =
+                service.getItemSummaries(request.getPageSize(), request.getPageToken());
 
-    @Override
-    public void listItemSummaries(ListItemListingsRequest request,
-                                  StreamObserver<ListItemSummariesResponse> responseObserver) {
-        try {
-            ItemSummaryDAO.ItemSummaryPage page = service.getItemSummaries(request.getPageSize(), request.getPageToken());
-
-            ListItemSummariesResponse response = ListItemSummariesResponse.newBuilder()
-                    .addAllItems(page.items().stream()
-                            .map(ItemListingDataMapper::toProtoSummary)
-                            .toList())
-                    .setNextPageToken(page.nextPageToken())
-                    .build();
-
-            responseObserver.onNext(response);
+            responseObserver.onNext(ListItemSummariesResponse.newBuilder()
+                .addAllItems(page.items().stream()
+                    .map(ItemListingDataMapper::toProtoSummary)
+                    .toList())
+                .setNextPageToken(page.nextPageToken())
+                .build());
             responseObserver.onCompleted();
         } catch (Exception e) {
             fail(responseObserver, e, "list item summaries");
@@ -98,19 +79,17 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
     }
 
     @Override
-    public void getItemThumbnails(GetItemThumbnailsRequest request,
-                                  StreamObserver<GetItemThumbnailsResponse> responseObserver) {
+    public void getItemThumbnails(ListItemThumbnailRequest request,
+        StreamObserver<GetItemThumbnailsResponse> responseObserver) {
         try {
             List<Integer> ids = request.getItemIdsList();
             List<ThumbnailDataDTO> thumbnails = service.getFirstThumbnails(ids);
 
-            GetItemThumbnailsResponse response = GetItemThumbnailsResponse.newBuilder()
-                    .addAllThumbnails(thumbnails.stream()
-                            .map(ItemListingDataMapper::toProtoThumbnail)
-                            .toList())
-                    .build();
-
-            responseObserver.onNext(response);
+            responseObserver.onNext(GetItemThumbnailsResponse.newBuilder()
+                .addAllThumbnails(thumbnails.stream()
+                    .map(ItemListingDataMapper::toProtoThumbnail)
+                    .toList())
+                .build());
             responseObserver.onCompleted();
         } catch (Exception e) {
             fail(responseObserver, e, "get item thumbnails");
@@ -119,19 +98,17 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
 
     @Override
     public void removeItemListing(RemoveItemListingRequest request,
-                                  StreamObserver<StatusResponse> responseObserver) {
+        StreamObserver<Empty> responseObserver) {
         try {
             boolean removed = service.removeItem(request.getItemId());
             if (removed) {
-                responseObserver.onNext(StatusResponse.newBuilder()
-                        .setResponse("Success")
-                        .build());
+                responseObserver.onNext(Empty.getDefaultInstance());
                 responseObserver.onCompleted();
                 LOG.info("Item listing [ id={} ] removed successfully", request.getItemId());
             } else {
                 responseObserver.onError(Status.NOT_FOUND
-                        .withDescription("Item listing with id " + request.getItemId() + " not found")
-                        .asRuntimeException());
+                    .withDescription("Item listing with id " + request.getItemId() + " not found")
+                    .asRuntimeException());
             }
         } catch (Exception e) {
             fail(responseObserver, e, "remove item listing");
@@ -142,13 +119,13 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
         IllegalArgumentException invalid = findIllegalArgument(e);
         if (invalid != null) {
             responseObserver.onError(Status.INVALID_ARGUMENT
-                    .withDescription(invalid.getMessage())
-                    .asRuntimeException());
+                .withDescription(invalid.getMessage())
+                .asRuntimeException());
         } else {
             LOG.error("Could not {}", action, e);
             responseObserver.onError(Status.INTERNAL
-                    .withDescription("Could not " + action)
-                    .asRuntimeException());
+                .withDescription("Could not " + action)
+                .asRuntimeException());
         }
     }
 

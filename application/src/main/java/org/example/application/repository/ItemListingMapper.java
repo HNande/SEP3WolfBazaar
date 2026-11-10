@@ -10,9 +10,9 @@ import static com.google.common.base.Strings.emptyToNull;
 
 public final class ItemListingMapper {
   private static final Map<ImageFileTypeJsonDTO, ImageFileType> FILETYPE_TO_PROTO = new EnumMap<>(Map.of(
-      ImageFileTypeJsonDTO.PNG, ImageFileType.PNG,
-      ImageFileTypeJsonDTO.JPEG, ImageFileType.JPEG,
-      ImageFileTypeJsonDTO.JPG, ImageFileType.JPG));
+      ImageFileTypeJsonDTO.PNG, ImageFileType.IMAGE_FILE_TYPE_PNG,
+      ImageFileTypeJsonDTO.JPEG, ImageFileType.IMAGE_FILE_TYPE_JPEG,
+      ImageFileTypeJsonDTO.JPG, ImageFileType.IMAGE_FILE_TYPE_JPG));
 
   private static final Map<ImageFileType, ImageFileTypeJsonDTO> FILETYPE_FROM_PROTO =
       FILETYPE_TO_PROTO.entrySet().stream()
@@ -24,21 +24,26 @@ public final class ItemListingMapper {
         .setDescription(dto.description())
         .setPrice(dto.price());
 
-    if (dto.album() != null) {
-      builder.setAlbum(toAlbum(dto.album()));
+    for (int i = 0; i < dto.imageList().size(); i++) {
+    builder.addImages(toImage(dto.imageList().get(i)));
     }
+
     return builder.build();
   }
   public static ItemListingResponseDTO toResponse(ItemListing item) {
+      List<ImageResponseDTO> images = new ArrayList<>();
+    for(int i = 0; i < item.getImagesList().size();i++)
+      images.add(toImageResponse(item.getImages(i)));
     return new ItemListingResponseDTO(
         item.getId(),
         item.getItemName(),
         emptyToNull(item.getDescription()),
         item.getPrice(),
-        toAlbumResponse(item.getAlbum()),
-            item.getDate().getYear(),
-            item.getDate().getMonth(),
-            item.getDate().getDay());
+        images,
+        item.getCategoriesList(),
+        item.getDate().getYear(),
+        item.getDate().getMonth(),
+        item.getDate().getDay());
   }
   public static ItemSummaryResponseDTO toSummaryResponse(ItemSummary item) {
     return new ItemSummaryResponseDTO(
@@ -60,13 +65,6 @@ public final class ItemListingMapper {
         t.getData().toByteArray());
   }
 
-  private static AlbumResponseDTO toAlbumResponse(Album a) {
-    return new AlbumResponseDTO(
-        a.getTitle(),
-        a.getImagesList().stream()
-            .map(ItemListingMapper::toImageResponse)
-            .toList());
-  }
   private static ImageResponseDTO toImageResponse(Image i) {
     return new ImageResponseDTO(
         i.getName(),
@@ -74,18 +72,6 @@ public final class ItemListingMapper {
         i.getWidth(),
         i.getHeight(),
         i.getData().toByteArray());
-  }
-  private static Album toAlbum(AlbumJsonDTO dto) {
-    Album.Builder builder = Album.newBuilder()
-        .setTitle(dto.title());
-
-    if (dto.images() != null) {
-      builder.addAllImages(
-          dto.images().stream()
-              .map(ItemListingMapper::toImage)
-              .toList());
-    }
-    return builder.build();
   }
 
   private static Image toImage(ImageJsonDTO dto) {
