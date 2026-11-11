@@ -22,11 +22,13 @@ public final class ItemListingMapper {
     AddItemListingRequest.Builder builder = AddItemListingRequest.newBuilder()
         .setItemName(dto.itemName())
         .setDescription(dto.description())
-        .setPrice(dto.price());
+        .setPrice(dto.price())
+        .setOwnerId(dto.ownerId());
 
     for (int i = 0; i < dto.imageList().size(); i++) {
     builder.addImages(toImage(dto.imageList().get(i)));
     }
+
 
     return builder.build();
   }
@@ -43,7 +45,8 @@ public final class ItemListingMapper {
         item.getCategoriesList(),
         item.getDate().getYear(),
         item.getDate().getMonth(),
-        item.getDate().getDay());
+        item.getDate().getDay(),
+        item.getOwnerId());
   }
   public static ItemSummaryResponseDTO toSummaryResponse(ItemSummary item) {
     return new ItemSummaryResponseDTO(
@@ -51,9 +54,8 @@ public final class ItemListingMapper {
         item.getItemName(),
         emptyToNull(item.getDescription()),
         item.getPrice(),
-        item.getDate().getYear(),
-        item.getDate().getMonth(),
-        item.getDate().getDay());
+        item.getOwnerId());
+
   }
 
   public static ThumbnailResponseDTO toThumbnailResponse(ItemThumbnail t) {

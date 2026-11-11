@@ -16,9 +16,14 @@ public record ItemListingJsonDTO(
         message = "Description must be between {min} and {max} characters")
      String description,
 
-    @Positive(message = "Price must be greater than 0")
+    //In uc description we say a price value of 0 is considered "free", and is considered valid
+    @NotNull @DecimalMin(value = "0.0", inclusive = false)
     int price,
-     @Valid List<ImageJsonDTO> imageList
+
+    @Valid List<ImageJsonDTO> imageList,
+
+    @NotNull
+    int ownerId
 ) {
 
 }

@@ -5,8 +5,6 @@ public record ItemSummaryResponseDTO(
     String itemName,
     String description,
     int price,
-    int year,
-    int month,
-    int day
+    int ownerId
 ) {
 }
