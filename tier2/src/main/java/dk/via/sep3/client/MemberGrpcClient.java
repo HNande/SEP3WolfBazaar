@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 public class MemberGrpcClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(MemberGrpcClient.class);
-    private static final long TIMEOUT_SECONDS = 10;
+    private static final int TIMEOUT_SECONDS = 10;
 
     private final MemberServiceGrpc.MemberServiceBlockingStub stub;
 
