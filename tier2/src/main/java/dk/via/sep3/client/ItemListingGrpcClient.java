@@ -21,8 +21,8 @@ import java.util.concurrent.TimeUnit;
 public class ItemListingGrpcClient  {
 
     private static final Logger LOG = LoggerFactory.getLogger(ItemListingGrpcClient.class);
-    private static final long TIMEOUT_SECONDS = 10;
-    private static final long THUMBNAIL_TIMEOUT_SECONDS = 30;
+    private static final int TIMEOUT_SECONDS = 10;
+    private static final int THUMBNAIL_TIMEOUT_SECONDS = 30;
     private static final int DEFAULT_PAGE_SIZE = 50;
     private static final int SUMMARY_PAGE_SIZE = 200;
 
