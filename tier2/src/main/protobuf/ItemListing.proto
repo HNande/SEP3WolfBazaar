@@ -110,6 +110,7 @@ message AddItemListingRequest {
   int32 price = 4;
   repeated Category categories = 5;
   repeated Image images = 6;
+  int32 ownerId= 7;
 }
 message AddImageRequest{
   int32 item_id= 1;

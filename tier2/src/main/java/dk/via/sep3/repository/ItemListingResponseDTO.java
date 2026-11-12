@@ -13,6 +13,7 @@ public record ItemListingResponseDTO(
     List<Category> categoryList,
     int year,
     int month,
-    int day
+    int day,
+    int ownerId
     ){
 }
