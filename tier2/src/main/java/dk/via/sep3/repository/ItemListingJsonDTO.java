@@ -17,7 +17,8 @@ public record ItemListingJsonDTO(
      String description,
 
     //In uc description we say a price value of 0 is considered "free", and is considered valid
-    @NotNull @DecimalMin(value = "0.0", inclusive = false)
+    //apparently Dec rejects free items, so min is a better choice
+    @NotNull @Min(value = 0, message = "Price cannot be negative")
     int price,
 
     @Valid List<ImageJsonDTO> imageList,
