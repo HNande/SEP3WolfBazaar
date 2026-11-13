@@ -87,6 +87,8 @@ message Member {
   int32 id = 1;
   string memberName = 2;
   string memberEmail = 3;
+  string firstName = 4;
+  string lastName = 5;
 }
 message Message {
   int32 id = 1;

@@ -24,17 +24,21 @@ public class Member {
     @Column(name = "password", nullable = false, length = 72)
     private String password;
 
+    @Column(name = "member_email", nullable = false, length = 100)
+    private String email;
+
     public Member()
     {
 
     }
 
-    public Member(String firstName, String lastName, String username, String password)
+    public Member(String firstName, String lastName, String username, String password, String email)
     {
         this.firstName = firstName;
         this.lastName = lastName;
         this.username = username;
         this.password = password;
+        this.email = email;
     }
 
     public int getMemberId() {
@@ -76,5 +80,13 @@ public class Member {
     public void setPassword(String password)
     {
         this.password = password;
+    }
+    public String getEmail()
+    {
+        return email;
+    }
+    public void setEmail(String email)
+    {
+        this.email = email;
     }
 }

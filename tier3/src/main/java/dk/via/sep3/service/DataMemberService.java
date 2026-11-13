@@ -15,14 +15,14 @@ public class DataMemberService {
     }
 
     @Transactional
-    public boolean addMember(String firstName, String lastName, String username, String password)
+    public boolean addMember(String firstName, String lastName, String username, String password, String email)
     {
         if(memberRepository.existsByUsername(username))
         {
             return false;
         }
 
-        Member newMember = new Member(firstName, lastName, username, password);
+        Member newMember = new Member(firstName, lastName, username, password, email);
         memberRepository.save(newMember);
         return true;
     }

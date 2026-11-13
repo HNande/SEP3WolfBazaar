@@ -26,7 +26,8 @@ public class GrpcMemberService extends MemberServiceGrpc.MemberServiceImplBase {
                     request.getFirstName(),
                     request.getLastName(),
                     request.getMemberName(),
-                    request.getPassword()
+                    request.getPassword(),
+                    request.getMemberEmail()
             );
             if (created) {
                 responseObserver.onNext(Empty.getDefaultInstance());
