@@ -13,41 +13,51 @@ public class HttpUserService : IUserService
         _http = httpClient;
     }
 
-    public async Task<UserDto> RegisterAsync(CreateUserDto dto)
-    {
-        var response = await _http.PostAsJsonAsync("api/user", new { name = dto.Name, password = dto.Password });
-        if (!response.IsSuccessStatusCode)
-            throw new Exception(await ReadErrorAsync(response));
+    private record RegisteredMember(string FirstName, string LastName, string Username);
 
-        return await response.Content.ReadFromJsonAsync<UserDto>()
-               ?? throw new InvalidOperationException("Failed to deserialize user response.");
-    }
+    public async Task<UserDto> RegisterAsync(CreateUserDto dto)
+        {
+            var response = await _http.PostAsJsonAsync("api/member", new
+            {
+                firstName = dto.FirstName,
+                lastName = dto.LastName,
+                username = dto.Name,
+                password = dto.Password
+            });
+            if (!response.IsSuccessStatusCode)
+                throw new Exception(await ReadErrorAsync(response));
+
+            var member = await response.Content.ReadFromJsonAsync<RegisteredMember>()
+                         ?? throw new InvalidOperationException("Failed to deserialize member response.");
+
+            return new UserDto { Name = member.Username };
+        }
 
     public async Task<UserDto> LoginAsync(string userName, string password)
-    {
-        var response = await _http.PostAsJsonAsync("api/auth/login", new { name = userName, password });
-
-        if (response.StatusCode == HttpStatusCode.Unauthorized)
-            throw new Exception("Wrong user name or password.");
-        if (!response.IsSuccessStatusCode)
-            throw new Exception(await ReadErrorAsync(response));
-
-        return await response.Content.ReadFromJsonAsync<UserDto>()
-               ?? throw new InvalidOperationException("Failed to deserialize user response.");
-    }
-
-    private static async Task<string> ReadErrorAsync(HttpResponseMessage response)
-    {
-        try
         {
-            var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>();
-            if (!string.IsNullOrWhiteSpace(error?.Message))
-                return error.Message;
-        }
-        catch (Exception ex) when (ex is JsonException or NotSupportedException)
-        {
+            var response = await _http.PostAsJsonAsync("api/auth/login", new { username = userName, password });
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+                throw new Exception("Wrong user name or password.");
+            if (!response.IsSuccessStatusCode)
+                throw new Exception(await ReadErrorAsync(response));
+
+            return await response.Content.ReadFromJsonAsync<UserDto>()
+                   ?? throw new InvalidOperationException("Failed to deserialize user response.");
         }
 
-        return $"Request failed (HTTP {(int)response.StatusCode} {response.ReasonPhrase})";
+        private static async Task<string> ReadErrorAsync(HttpResponseMessage response)
+        {
+            try
+            {
+                var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>();
+                if (!string.IsNullOrWhiteSpace(error?.Message))
+                    return error.Message;
+            }
+            catch (Exception ex) when (ex is JsonException or NotSupportedException)
+            {
+            }
+
+            return $"Request failed (HTTP {(int)response.StatusCode} {response.ReasonPhrase})";
+        }
     }
-}
