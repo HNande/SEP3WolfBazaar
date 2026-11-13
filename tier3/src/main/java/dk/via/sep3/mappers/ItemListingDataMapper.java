@@ -137,18 +137,12 @@ public class ItemListingDataMapper {
   }
 
   public static ItemSummary toProtoSummary(ItemSummaryDataDTO dto) {
-    dk.via.sep3.generated.Date protoDate =  dk.via.sep3.generated.Date.newBuilder()
-            .setYear(dto.listDate().getYear())
-            .setMonth(dto.listDate().getMonthValue())
-            .setDay(dto.listDate().getDayOfMonth())
-            .build();
 
     return ItemSummary.newBuilder()
             .setId(dto.itemId())
             .setItemName(orEmpty(dto.itemName()))
             .setDescription(orEmpty(dto.description()))
             .setPrice(dto.price())
-            .setDate(protoDate)
             .build();
   }
 
