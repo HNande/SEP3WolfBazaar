@@ -36,6 +36,20 @@ public class MemberGrpcClient {
         }
     }
 
+    public boolean login(LoginRequest request) {
+        try {
+            stub.withDeadlineAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    .login(request);
+            return true;
+
+        } catch (StatusRuntimeException e) {
+            if (e.getStatus().getCode() == Status.Code.NOT_FOUND) {
+                return false;
+            }
+            throw translate(e, "login");
+        }
+    }
+
     private RuntimeException translate(StatusRuntimeException e, String action) {
         Status status = e.getStatus();
         if (status.getCode() == Status.Code.INVALID_ARGUMENT) {

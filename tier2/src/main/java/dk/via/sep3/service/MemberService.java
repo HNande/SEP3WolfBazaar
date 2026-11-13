@@ -2,6 +2,7 @@ package dk.via.sep3.service;
 
 import dk.via.sep3.generated.*;
 import dk.via.sep3.client.MemberGrpcClient;
+import dk.via.sep3.repository.LoginMemberJsonDTO;
 import dk.via.sep3.repository.MemberConstraints;
 import dk.via.sep3.repository.MemberResponseDTO;
 import dk.via.sep3.repository.RegisterMemberJsonDTO;
@@ -48,5 +49,14 @@ public class MemberService {
 
         return Optional.of(new MemberResponseDTO(
                 request.getFirstName(), request.getLastName(), request.getMemberName()));
+    }
+
+    public boolean login(LoginMemberJsonDTO dto) {
+        LoginRequest request = LoginRequest.newBuilder()
+                .setMemberName(dto.username().trim())
+                .setPassword(dto.password())
+                .build();
+
+        return memberClient.login(request);
     }
 }
