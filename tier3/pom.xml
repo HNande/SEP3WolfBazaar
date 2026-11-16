@@ -105,7 +105,7 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
-					<mainClass>dk.via.sep3.Application</mainClass>
+					<mainClass>dk.via.sep3.Tier3Application</mainClass>
 				</configuration>
 			</plugin>
 			<plugin>
