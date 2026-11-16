@@ -17,8 +17,8 @@ public class CreateUserDto
     public string MemberName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Email is required.")]
-    [EmailAddress(ErrorMessage = "Invalid email format.")]
-    [StringLength(254, ErrorMessage = "Email must be at most 254 characters.")]
+    [StringLength(100, ErrorMessage = "Email must be at most 100 characters.")]
+    [RegularExpression(@"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$", ErrorMessage = "Email format is invalid.")]
     public string MemberEmail { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Password is required.")]
