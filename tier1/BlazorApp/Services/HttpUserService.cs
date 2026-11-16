@@ -13,51 +13,67 @@ public class HttpUserService : IUserService
         _http = httpClient;
     }
 
-    private record RegisteredMember(string FirstName, string LastName, string Username);
+    private record RegisteredMember(string FirstName, string LastName, string Username, string? Email);
+    private record LoginResponse(string Name);
 
     public async Task<UserDto> RegisterAsync(CreateUserDto dto)
+    {
+        var response = await _http.PostAsJsonAsync("api/member", new
         {
-            var response = await _http.PostAsJsonAsync("api/member", new
-            {
-                firstName = dto.FirstName,
-                lastName = dto.LastName,
-                username = dto.Name,
-                password = dto.Password
-            });
-            if (!response.IsSuccessStatusCode)
-                throw new Exception(await ReadErrorAsync(response));
+            firstName = dto.FirstName.Trim(),
+            lastName = dto.LastName.Trim(),
+            username = dto.MemberName.Trim(),
+            email = dto.MemberEmail.Trim(),
+            password = dto.Password
+        });
 
-            var member = await response.Content.ReadFromJsonAsync<RegisteredMember>()
-                         ?? throw new InvalidOperationException("Failed to deserialize member response.");
+        if (!response.IsSuccessStatusCode)
+            throw new Exception(await ReadErrorAsync(response));
 
-            return new UserDto { Name = member.Username };
-        }
+        var member = await response.Content.ReadFromJsonAsync<RegisteredMember>()
+                     ?? throw new InvalidOperationException("Failed to deserialize member response.");
+
+        return new UserDto
+        {
+            MemberName = member.Username,
+            MemberEmail = member.Email ?? dto.MemberEmail.Trim()
+        };
+    }
 
     public async Task<UserDto> LoginAsync(string userName, string password)
+    {
+        var response = await _http.PostAsJsonAsync("api/auth/login", new
         {
-            var response = await _http.PostAsJsonAsync("api/auth/login", new { username = userName, password });
+            username = userName.Trim(),
+            password
+        });
 
-            if (response.StatusCode == HttpStatusCode.Unauthorized)
-                throw new Exception("Wrong user name or password.");
-            if (!response.IsSuccessStatusCode)
-                throw new Exception(await ReadErrorAsync(response));
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+            throw new Exception("Wrong user name or password.");
+        if (!response.IsSuccessStatusCode)
+            throw new Exception(await ReadErrorAsync(response));
 
-            return await response.Content.ReadFromJsonAsync<UserDto>()
-                   ?? throw new InvalidOperationException("Failed to deserialize user response.");
-        }
+        var loginResult = await response.Content.ReadFromJsonAsync<LoginResponse>()
+                          ?? throw new InvalidOperationException("Failed to deserialize user response.");
 
-        private static async Task<string> ReadErrorAsync(HttpResponseMessage response)
+        return new UserDto
         {
-            try
-            {
-                var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>();
-                if (!string.IsNullOrWhiteSpace(error?.Message))
-                    return error.Message;
-            }
-            catch (Exception ex) when (ex is JsonException or NotSupportedException)
-            {
-            }
-
-            return $"Request failed (HTTP {(int)response.StatusCode} {response.ReasonPhrase})";
-        }
+            MemberName = loginResult.Name
+        };
     }
+
+    private static async Task<string> ReadErrorAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            var error = await response.Content.ReadFromJsonAsync<ApiErrorDto>();
+            if (!string.IsNullOrWhiteSpace(error?.Message))
+                return error.Message;
+        }
+        catch (Exception ex) when (ex is JsonException or NotSupportedException)
+        {
+        }
+
+        return $"Request failed (HTTP {(int)response.StatusCode} {response.ReasonPhrase})";
+    }
+}
