@@ -83,7 +83,6 @@ public class HttpItemService : IItemService
 
         var album = new AlbumDto
         {
-            Title = $"{itemName} album",
             Photos = new List<PhotoDto>()
         };
 
