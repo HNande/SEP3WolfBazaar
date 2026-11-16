@@ -66,9 +66,14 @@ public class SimpleAuthProvider : AuthenticationStateProvider
     {
         var claims = new List<Claim>
         {
-            new(ClaimTypes.Name, user.Name),
+            new(ClaimTypes.Name, user.MemberName),
             new("Id", user.Id.ToString())
         };
+        
+        if (!string.IsNullOrWhiteSpace(user.MemberEmail))
+        {
+            claims.Add(new Claim(ClaimTypes.Email, user.MemberEmail));
+        }
 
         return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity(claims, "apiauth")));
     }
