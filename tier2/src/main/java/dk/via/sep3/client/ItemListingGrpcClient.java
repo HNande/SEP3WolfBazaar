@@ -131,6 +131,20 @@ public class ItemListingGrpcClient  {
             throw translate(e, "remove item " + id);
         }
     }
+
+    public boolean updateItem(int id, ItemListingJsonDTO dto) {
+        try {
+            stub.withDeadlineAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .updateItemListing(ItemListingMapper.toUpdateRequest(id, dto));
+            return true;
+        } catch (StatusRuntimeException e) {
+            if (e.getStatus().getCode() == Status.Code.NOT_FOUND) {
+                return false;
+            }
+            throw translate(e, "update item " + id);
+        }
+    }
+
     private RuntimeException translate(StatusRuntimeException e, String action) {
         Status status = e.getStatus();
         if (status.getCode() == Status.Code.INVALID_ARGUMENT) {

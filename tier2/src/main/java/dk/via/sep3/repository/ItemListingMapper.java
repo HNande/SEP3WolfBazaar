@@ -32,6 +32,20 @@ public final class ItemListingMapper {
 
     return builder.build();
   }
+
+  public static UpdateItemListingRequest toUpdateRequest(int id, ItemListingJsonDTO dto) {
+    UpdateItemListingRequest.Builder builder = UpdateItemListingRequest.newBuilder()
+        .setItemId(id)
+        .setItemName(dto.itemName())
+        .setDescription(dto.description())
+        .setPrice(dto.price());
+
+    for (ImageJsonDTO image : dto.imageList()) {
+      builder.addImages(toImage(image));
+    }
+    return builder.build();
+  }
+
   public static ItemListingResponseDTO toResponse(ItemListing item) {
       List<ImageResponseDTO> images = new ArrayList<>();
     for(int i = 0; i < item.getImagesList().size();i++)

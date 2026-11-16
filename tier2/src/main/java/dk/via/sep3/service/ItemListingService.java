@@ -31,6 +31,15 @@ public class ItemListingService {
     return client.removeItem(id);
   }
 
+  public void updateItem(int id, ItemListingJsonDTO dto) {
+    if (id <= 0) {
+      throw new InvalidRequestException("Item id must be a positive integer");
+    }
+    if (!client.updateItem(id, dto)) {
+      throw new NoSuchElementException("Item " + id + " not found");
+    }
+  }
+
   public ItemListingResponseDTO getItemById(int id) {
     return client.getItemById(id)
             .map(ItemListingMapper::toResponse)

@@ -47,4 +47,11 @@ public class ItemListingController {
   public void deleteItemListing(@PathVariable int id) {
     itemListingService.removeItem(id);     // throws Status code 404 on not found
   }
+
+  @PutMapping("/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void updateItem(@PathVariable int id, @Valid @RequestBody ItemListingJsonDTO form) {
+    itemListingService.updateItem(id, form);
+  }
+
 }
