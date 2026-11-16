@@ -40,6 +40,7 @@ public class MemberService {
                 .setFirstName(dto.firstName().trim())
                 .setLastName(dto.lastName().trim())
                 .setMemberName(dto.username().trim())
+                .setMemberEmail(dto.email().trim())
                 .setPassword(passwordEncoder.encode(dto.password()))
                 .build();
 

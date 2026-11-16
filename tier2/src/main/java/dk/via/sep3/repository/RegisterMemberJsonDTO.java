@@ -1,6 +1,7 @@
 package dk.via.sep3.repository;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record RegisterMemberJsonDTO(
@@ -19,12 +20,19 @@ public record RegisterMemberJsonDTO(
                 message = "Username must be at most {max} characters")
         String username,
 
+        @NotBlank(message = "Email is required")
+        @Pattern(regexp = MemberConstraints.EMAIL_REGEX,
+                message = "Email format is invalid")
+        @Size(max = MemberConstraints.EMAIL_MAX,
+                message = "Email must be at most {max} characters")
+        String email,
+
         @NotBlank(message = "Password is required")
         String password
 ) {
     @Override
     public String toString() {
         return "RegisterMemberJsonDTO[firstName=" + firstName + ", lastName=" + lastName
-                + ", username=" + username + ", password=***]";
+                + ", username=" + username + ", email=" + email + ", password=***]";
     }
 }
