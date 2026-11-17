@@ -7,5 +7,6 @@ public record ItemSummaryDataDTO(
         String itemName,
         String description,
         int price,
-        LocalDate listDate
+        LocalDate listDate,
+        int ownerId
 ) {}

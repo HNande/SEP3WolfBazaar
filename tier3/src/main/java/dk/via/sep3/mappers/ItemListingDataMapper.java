@@ -28,7 +28,8 @@ public class ItemListingDataMapper {
         request.getItemName(),
         request.getDescription(),
         request.getPrice(),
-        new AlbumDataDTO(request.getItemName() + " Album", images));
+        new AlbumDataDTO(request.getItemName() + " Album", images),
+            request.getOwnerId());
   }
 
   public static ItemListingResponseDTO toResponseDTO(ItemListing itemListing) {
@@ -42,7 +43,9 @@ public class ItemListingDataMapper {
         toCategoryDTOs(itemListing.getCategories()),
         date.getYear(),
         date.getMonthValue(),
-        date.getDayOfMonth());
+        date.getDayOfMonth(),
+        itemListing.getOwnerId()
+    );
   }
 
   private static List<dk.via.sep3.generated.Category> toCategoryDTOs(
@@ -104,12 +107,12 @@ public class ItemListingDataMapper {
         .setDescription(orEmpty(dto.description()))
         .setPrice(dto.price())
         .addAllCategories(dto.categoryList())
+        .setOwnerId(dto.ownerId())
         .setDate(dk.via.sep3.generated.Date.newBuilder()
             .setYear(dto.year())
             .setMonth(dto.month())
             .setDay(dto.day())
             .build());
-
     return builder.build();
   }
 
@@ -143,6 +146,7 @@ public class ItemListingDataMapper {
             .setItemName(orEmpty(dto.itemName()))
             .setDescription(orEmpty(dto.description()))
             .setPrice(dto.price())
+            .setOwnerId(dto.ownerId())
             .build();
   }
 

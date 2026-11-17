@@ -28,6 +28,9 @@ public class ItemListing {
     @Column(name = "list_date", nullable = false)
     private LocalDate listDate;
 
+    @Column(name="owner_id", nullable = false)
+    private int ownerId;
+
     @ManyToMany
     @JoinTable(
         name = "item_listing_category",
@@ -42,10 +45,11 @@ public class ItemListing {
     public ItemListing() {
     }
 
-    public ItemListing(String itemName, String description, int price) {
+    public ItemListing(String itemName, String description, int price, int ownerId) {
         this.itemName = itemName;
         this.description = description;
         this.price = price;
+        this.ownerId = ownerId;
     }
 
     @PrePersist
@@ -85,4 +89,13 @@ public class ItemListing {
 
     public List<ItemPicture> getPictures() { return pictures; }
     public void setPictures(List<ItemPicture> pictures) { this.pictures = pictures; }
+
+    public int getOwnerId()
+    {
+        return ownerId;
+    }
+    public void setOwnerId(int ownerId)
+    {
+        this.ownerId = ownerId;
+    }
 }

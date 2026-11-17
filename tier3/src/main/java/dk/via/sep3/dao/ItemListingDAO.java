@@ -50,6 +50,7 @@ public class ItemListingDAO {
     listing.setDescription(dto.description());
     listing.setPrice(dto.price());
     listing.setListDate(LocalDate.now());
+    listing.setOwnerId(dto.ownerId());
 
     Map<Path, byte[]> filesToWrite = new LinkedHashMap<>();
     if (dto.album() != null && dto.album().images() != null) {
