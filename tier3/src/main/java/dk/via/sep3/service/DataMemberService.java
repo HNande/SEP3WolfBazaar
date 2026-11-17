@@ -5,6 +5,8 @@ import dk.via.sep3.entities.Member;
 import dk.via.sep3.repository.MemberRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class DataMemberService {
 
@@ -25,5 +27,9 @@ public class DataMemberService {
         Member newMember = new Member(firstName, lastName, username, password, email);
         memberRepository.save(newMember);
         return true;
+    }
+
+    public Optional<Member> login(String username, String password) {
+        return memberRepository.findByUsernameAndPassword(username, password);
     }
 }

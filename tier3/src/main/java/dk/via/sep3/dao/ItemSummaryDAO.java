@@ -60,7 +60,8 @@ public class ItemSummaryDAO {
                         item.getItemName(),
                         item.getDescription(),
                         item.getPrice(),
-                        item.getListDate()))
+                        item.getListDate(),
+                        item.getOwnerId()))
                 .toList();
 
         return new ItemSummaryPage(summaries, nextToken);

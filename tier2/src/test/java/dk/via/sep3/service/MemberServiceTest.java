@@ -4,6 +4,8 @@ import dk.via.sep3.client.MemberGrpcClient;
 import dk.via.sep3.exception.UpstreamException;
 import dk.via.sep3.generated.AddMemberRequest;
 import dk.via.sep3.generated.LoginRequest;
+import dk.via.sep3.generated.Member;
+import dk.via.sep3.generated.MemberResponse;
 import dk.via.sep3.repository.LoginMemberJsonDTO;
 import dk.via.sep3.repository.MemberResponseDTO;
 import dk.via.sep3.repository.RegisterMemberJsonDTO;
@@ -89,7 +91,7 @@ class MemberServiceTest {
 
         @BeforeEach
         void setUp() {
-            dto = new RegisterMemberJsonDTO(" Fenrir ", " Wolf ", " fenrir99 ", "password123");
+            dto = new RegisterMemberJsonDTO(" Fenrir ", " Wolf ", " fenrir99 ", "fenrir@wolf.dk", "password123");
         }
 
         @Test
@@ -151,13 +153,20 @@ class MemberServiceTest {
         }
 
         @Test
-        @DisplayName("returns true and sends the trimmed username with the plain password")
-        void one_validCredentials_returnsTrue() {
-            when(client.login(any(LoginRequest.class))).thenReturn(true);
+        @DisplayName("returns the member and sends the trimmed username with the plain password")
+        void one_validCredentials_returnsMember() {
+            Member protoMember = Member.newBuilder()
+                    .setFirstName("Fenrir")
+                    .setLastName("Wolf")
+                    .setMemberName("fenrir99")
+                    .build();
+            MemberResponse protoResponse = MemberResponse.newBuilder().setMember(protoMember).build();
+            when(client.login(any(LoginRequest.class))).thenReturn(Optional.of(protoResponse));
 
-            boolean result = service.login(dto);
+            Optional<MemberResponseDTO> result = service.login(dto);
 
-            assertTrue(result);
+            assertTrue(result.isPresent());
+            assertEquals(new MemberResponseDTO("Fenrir", "Wolf", "fenrir99"), result.get());
             ArgumentCaptor<LoginRequest> captor = ArgumentCaptor.forClass(LoginRequest.class);
             verify(client).login(captor.capture());
             assertEquals("fenrir99", captor.getValue().getMemberName());
@@ -165,11 +174,11 @@ class MemberServiceTest {
         }
 
         @Test
-        @DisplayName("returns false when the credentials are wrong")
-        void boundary_wrongCredentials_returnsFalse() {
-            when(client.login(any(LoginRequest.class))).thenReturn(false);
+        @DisplayName("returns empty when the credentials are wrong")
+        void boundary_wrongCredentials_returnsEmpty() {
+            when(client.login(any(LoginRequest.class))).thenReturn(Optional.empty());
 
-            assertFalse(service.login(dto));
+            assertTrue(service.login(dto).isEmpty());
         }
 
         @Test
