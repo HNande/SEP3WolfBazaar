@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -36,15 +37,15 @@ public class MemberGrpcClient {
         }
     }
 
-    public boolean login(LoginRequest request) {
+    public Optional<MemberResponse> login(LoginRequest request) {
         try {
-            stub.withDeadlineAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            MemberResponse response = stub.withDeadlineAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                     .login(request);
-            return true;
+            return Optional.of(response);
 
         } catch (StatusRuntimeException e) {
             if (e.getStatus().getCode() == Status.Code.NOT_FOUND) {
-                return false;
+                return Optional.empty();
             }
             throw translate(e, "login");
         }

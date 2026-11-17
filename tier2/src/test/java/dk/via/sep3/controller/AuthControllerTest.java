@@ -3,6 +3,7 @@ package dk.via.sep3.controller;
 import dk.via.sep3.exception.ApiExceptionHandler;
 import dk.via.sep3.exception.UpstreamException;
 import dk.via.sep3.repository.LoginMemberJsonDTO;
+import dk.via.sep3.repository.MemberResponseDTO;
 import dk.via.sep3.service.MemberService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -11,6 +12,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import java.util.Optional;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
@@ -49,7 +52,8 @@ class AuthControllerTest {
         @Test
         @DisplayName("returns 200 with the trimmed username as name")
         void one_validCredentials_returns200() throws Exception {
-            when(service.login(any(LoginMemberJsonDTO.class))).thenReturn(true);
+            when(service.login(any(LoginMemberJsonDTO.class)))
+                    .thenReturn(Optional.of(new MemberResponseDTO("Fen", "Rir", "fenrir99")));
 
             mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                             .content(body(" fenrir99 ", "password123")))
@@ -61,7 +65,7 @@ class AuthControllerTest {
         @Test
         @DisplayName("returns 401 when the credentials are wrong")
         void boundary_wrongCredentials_returns401() throws Exception {
-            when(service.login(any(LoginMemberJsonDTO.class))).thenReturn(false);
+            when(service.login(any(LoginMemberJsonDTO.class))).thenReturn(Optional.empty());
 
             mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                             .content(body("fenrir99", "wrongpassword")))

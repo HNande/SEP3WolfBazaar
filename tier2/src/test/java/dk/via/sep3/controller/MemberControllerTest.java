@@ -36,10 +36,10 @@ class MemberControllerTest {
                 .build();
     }
 
-    private static String body(String first, String last, String user, String pass) {
+    private static String body(String first, String last, String user, String email, String pass) {
         return """
-            {"firstName":%s,"lastName":%s,"username":%s,"password":%s}
-            """.formatted(q(first), q(last), q(user), q(pass));
+            {"firstName":%s,"lastName":%s,"username":%s,"email":%s,"password":%s}
+            """.formatted(q(first), q(last), q(user), q(email), q(pass));
     }
 
     private static String q(String s) {
@@ -58,7 +58,7 @@ class MemberControllerTest {
                     .thenReturn(Optional.of(new MemberResponseDTO("Fenrir", "Wolf", "fenrir99")));
 
             mvc.perform(post("/api/member").contentType(MediaType.APPLICATION_JSON)
-                            .content(body("Fenrir", "Wolf", "fenrir99", "password123")))
+                            .content(body("Fenrir", "Wolf", "fenrir99", "fenrir@wolf.dk", "password123")))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.firstName").value("Fenrir"))
                     .andExpect(jsonPath("$.lastName").value("Wolf"))
@@ -70,7 +70,7 @@ class MemberControllerTest {
         @DisplayName("returns 400 when first name is blank")
         void zero_blankFirstName_returns400() throws Exception {
             mvc.perform(post("/api/member").contentType(MediaType.APPLICATION_JSON)
-                            .content(body("", "Wolf", "fenrir99", "password123")))
+                            .content(body("", "Wolf", "fenrir99", "fenrir@wolf.dk", "password123")))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message").value(containsString("First name is required")));
 
@@ -81,7 +81,7 @@ class MemberControllerTest {
         @DisplayName("returns 400 when last name is missing")
         void zero_missingLastName_returns400() throws Exception {
             mvc.perform(post("/api/member").contentType(MediaType.APPLICATION_JSON)
-                            .content(body("Fenrir", null, "fenrir99", "password123")))
+                            .content(body("Fenrir", null, "fenrir99", "fenrir@wolf.dk", "password123")))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message").value(containsString("Last name is required")));
 
@@ -92,7 +92,7 @@ class MemberControllerTest {
         @DisplayName("returns 400 when username is blank")
         void zero_blankUsername_returns400() throws Exception {
             mvc.perform(post("/api/member").contentType(MediaType.APPLICATION_JSON)
-                            .content(body("Fenrir", "Wolf", "  ", "password123")))
+                            .content(body("Fenrir", "Wolf", "  ", "fenrir@wolf.dk", "password123")))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message").value(containsString("Username is required")));
 
@@ -103,7 +103,7 @@ class MemberControllerTest {
         @DisplayName("returns 400 when password is missing")
         void zero_missingPassword_returns400() throws Exception {
             mvc.perform(post("/api/member").contentType(MediaType.APPLICATION_JSON)
-                            .content(body("Fenrir", "Wolf", "fenrir99", null)))
+                            .content(body("Fenrir", "Wolf", "fenrir99", "fenrir@wolf.dk", null)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.message").value(containsString("Password is required")));
 
@@ -117,7 +117,7 @@ class MemberControllerTest {
                     .thenReturn(Optional.of("Password must be at least 8 characters long"));
 
             mvc.perform(post("/api/member").contentType(MediaType.APPLICATION_JSON)
-                            .content(body("Fenrir", "Wolf", "fenrir99", "short12")))
+                            .content(body("Fenrir", "Wolf", "fenrir99", "fenrir@wolf.dk", "short12")))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.status").value(400))
                     .andExpect(jsonPath("$.message").value("Password must be at least 8 characters long"));
@@ -132,7 +132,7 @@ class MemberControllerTest {
             when(service.register(any(RegisterMemberJsonDTO.class))).thenReturn(Optional.empty());
 
             mvc.perform(post("/api/member").contentType(MediaType.APPLICATION_JSON)
-                            .content(body("Fenrir", "Wolf", "fenrir99", "password123")))
+                            .content(body("Fenrir", "Wolf", "fenrir99", "fenrir@wolf.dk", "password123")))
                     .andExpect(status().isConflict())
                     .andExpect(jsonPath("$.status").value(409))
                     .andExpect(jsonPath("$.message").value("Username is already taken"));
@@ -156,7 +156,7 @@ class MemberControllerTest {
                     .thenThrow(new UpstreamException("Could not add member: UNAVAILABLE", null));
 
             mvc.perform(post("/api/member").contentType(MediaType.APPLICATION_JSON)
-                            .content(body("Fenrir", "Wolf", "fenrir99", "password123")))
+                            .content(body("Fenrir", "Wolf", "fenrir99", "fenrir@wolf.dk", "password123")))
                     .andExpect(status().isBadGateway())
                     .andExpect(jsonPath("$.status").value(502));
         }

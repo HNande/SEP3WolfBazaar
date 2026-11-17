@@ -52,12 +52,18 @@ public class MemberService {
                 request.getFirstName(), request.getLastName(), request.getMemberName()));
     }
 
-    public boolean login(LoginMemberJsonDTO dto) {
+    public Optional<MemberResponseDTO> login(LoginMemberJsonDTO dto) {
         LoginRequest request = LoginRequest.newBuilder()
                 .setMemberName(dto.username().trim())
                 .setPassword(dto.password())
                 .build();
 
-        return memberClient.login(request);
+        Optional<MemberResponse> response = memberClient.login(request);
+        if (response.isEmpty()) {
+            return Optional.empty();
+        }
+        dk.via.sep3.generated.Member member = response.get().getMember();
+        return Optional.of(new MemberResponseDTO(
+                member.getFirstName(), member.getLastName(), member.getMemberName()));
     }
 }

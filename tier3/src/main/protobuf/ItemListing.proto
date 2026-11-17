@@ -16,7 +16,7 @@ service MemberService{
   rpc AddMember (AddMemberRequest) returns (google.protobuf.Empty);
   rpc GetMember (GetMemberRequest) returns (MemberResponse);
   rpc RemoveMember (RemoveMemberRequest) returns (google.protobuf.Empty);
-  rpc Login (LoginRequest) returns (google.protobuf.Empty);
+  rpc Login (LoginRequest) returns (MemberResponse);
   rpc CheckRegisterAvailability (CheckRegisterAvailabilityFieldRequest) returns (google.protobuf.Empty);
 }
 service ConversationService{
