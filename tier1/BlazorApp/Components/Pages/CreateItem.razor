@@ -1,6 +1,8 @@
 @page "/create_item"
 @rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Authorization
 @inject IItemService ItemService
+@inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager Navigation
 
 <h3>Create New Item</h3>
@@ -116,6 +118,24 @@
             errorMessage = "Please upload at least one picture.";
             return;
         }
+
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated != true)
+        {
+            errorMessage = "You must be logged in to create an item.";
+            return;
+        }
+
+        var idClaim = user.FindFirst("Id")?.Value;
+        if (!int.TryParse(idClaim, out int ownerId) || ownerId <= 0)
+        {
+            errorMessage = "User ID not found. Please log in again.";
+            return;
+        }
+
+        itemDto.OwnerId = ownerId;
 
         errorMessage = null;
         isSubmitting = true;

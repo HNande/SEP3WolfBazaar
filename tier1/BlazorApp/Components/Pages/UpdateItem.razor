@@ -1,0 +1,260 @@
+﻿@page "/update_item/{ItemId:int}"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Microsoft.AspNetCore.Components.Authorization
+@using BlazorApp.DTO
+@inject IItemService ItemService
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager Navigation
+
+<h3>Update Item</h3>
+
+@if (isLoading)
+{
+    <p>Loading item details...</p>
+}
+else if (!string.IsNullOrEmpty(loadError))
+{
+    <div class="alert alert-danger">@loadError</div>
+    <a href="/" class="btn btn-secondary">Back to Catalogue</a>
+}
+else
+{
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <EditForm Model="@itemDto" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label>Name (8 - 200 chars):</label>
+            <InputText class="form-control" @bind-Value="itemDto.Name" />
+            <ValidationMessage For="@(() => itemDto.Name)" />
+        </div>
+
+        <div class="mb-3">
+            <label>Description (20 - 500 chars):</label>
+            <InputTextArea class="form-control" @bind-Value="itemDto.Description" />
+            <ValidationMessage For="@(() => itemDto.Description)" />
+        </div>
+
+        <div class="mb-3">
+            <label>Price:</label>
+            <InputNumber class="form-control" @bind-Value="itemDto.Price" />
+            <ValidationMessage For="@(() => itemDto.Price)" />
+        </div>
+
+        @if (existingPhotos.Count > 0)
+        {
+            <div class="mb-3">
+                <label class="d-block mb-2">Current Pictures (@existingPhotos.Count):</label>
+                <div class="d-flex flex-wrap gap-3">
+                    @for (int i = 0; i < existingPhotos.Count; i++)
+                    {
+                        var index = i;
+                        var photo = existingPhotos[index];
+                        <div class="border rounded p-2 text-center" style="width: 140px;">
+                            @if (photo.Data is { Length: > 0 })
+                            {
+                                <img src="@ToDataUrl(photo)"
+                                     alt="@photo.Name"
+                                     style="width: 120px; height: 120px; object-fit: cover;"
+                                     class="rounded mb-2" />
+                            }
+                            else
+                            {
+                                <div class="bg-secondary text-white d-flex align-items-center justify-content-center rounded mb-2"
+                                     style="width: 120px; height: 120px;">
+                                    No preview
+                                </div>
+                            }
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-danger w-100"
+                                    @onclick="() => RemoveExistingPhoto(index)">
+                                Remove
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="mb-3">
+            <label>Add New Pictures (Remaining slots: @(MaxAllowedFiles - existingPhotos.Count), PNG/JPEG, up to 2048x2048):</label>
+            <InputFile OnChange="LoadFiles"
+                       class="form-control"
+                       multiple
+                       accept=".png, .jpeg, .jpg"
+                       disabled="@(existingPhotos.Count >= MaxAllowedFiles)" />
+            <small class="text-muted">
+                Total pictures: @(existingPhotos.Count + selectedFiles.Count) / @MaxAllowedFiles
+                (Existing: @existingPhotos.Count, New: @selectedFiles.Count)
+            </small>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                @(isSubmitting ? "Saving..." : "Save Changes")
+            </button>
+            <a href="/" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public int ItemId { get; set; }
+
+    private ItemDto itemDto = new();
+    private List<PhotoDto> existingPhotos = new();
+    private List<IBrowserFile> selectedFiles = new();
+
+    private bool isLoading = true;
+    private bool isSubmitting;
+    private string? loadError;
+    private string? errorMessage;
+
+    private const int MaxAllowedFiles = 4;
+    private const long MaxFileSize = 10 * 1024 * 1024;
+    private const int MaxWidth = 2048;
+    private const int MaxHeight = 2048;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthProvider.GetAuthenticationStateAsync();
+            var idClaim = authState.User.FindFirst("Id")?.Value;
+            if (!int.TryParse(idClaim, out int currentUserId) || currentUserId <= 0)
+            {
+                loadError = "You must be logged in to edit an item.";
+                return;
+            }
+
+            itemDto = await ItemService.GetItemByIdAsync(ItemId);
+
+            if (itemDto.OwnerId != currentUserId)
+            {
+                loadError = "You do not have permission to edit this item.";
+                return;
+            }
+
+            existingPhotos = itemDto.Album?.Photos ?? new List<PhotoDto>();
+        }
+        catch (Exception ex)
+        {
+            loadError = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void RemoveExistingPhoto(int index)
+    {
+        if (index >= 0 && index < existingPhotos.Count)
+        {
+            existingPhotos.RemoveAt(index);
+            errorMessage = null;
+        }
+    }
+
+    private async Task LoadFiles(InputFileChangeEventArgs e)
+    {
+        errorMessage = null;
+        selectedFiles.Clear();
+
+        int remainingSlots = MaxAllowedFiles - existingPhotos.Count;
+        if (remainingSlots <= 0)
+        {
+            errorMessage = $"Maximum of {MaxAllowedFiles} pictures reached. Remove an existing picture first.";
+            return;
+        }
+
+        IReadOnlyList<IBrowserFile> files;
+        try
+        {
+            files = e.GetMultipleFiles(remainingSlots);
+        }
+        catch (InvalidOperationException)
+        {
+            errorMessage = $"You can only add up to {remainingSlots} more picture(s) (max {MaxAllowedFiles} total).";
+            return;
+        }
+
+        foreach (var file in files)
+        {
+            if (!file.ContentType.Equals("image/jpeg", StringComparison.OrdinalIgnoreCase) &&
+                !file.ContentType.Equals("image/png", StringComparison.OrdinalIgnoreCase))
+            {
+                errorMessage = $"File '{file.Name}' has an invalid format. Only JPG/PNG allowed.";
+                selectedFiles.Clear();
+                return;
+            }
+
+            if (file.Size > MaxFileSize)
+            {
+                errorMessage = $"File '{file.Name}' is too large. Max size allowed is {MaxFileSize / (1024 * 1024)} MB.";
+                selectedFiles.Clear();
+                return;
+            }
+
+            try
+            {
+                var resizedFile = await file.RequestImageFileAsync(file.ContentType, MaxWidth, MaxHeight);
+                selectedFiles.Add(resizedFile);
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Error processing image {file.Name}: {ex.Message}";
+                selectedFiles.Clear();
+                return;
+            }
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        int totalPhotos = existingPhotos.Count + selectedFiles.Count;
+        if (totalPhotos == 0)
+        {
+            errorMessage = "Please keep or upload at least one picture.";
+            return;
+        }
+
+        if (totalPhotos > MaxAllowedFiles)
+        {
+            errorMessage = $"You can have a maximum of {MaxAllowedFiles} pictures in total.";
+            return;
+        }
+
+        errorMessage = null;
+        isSubmitting = true;
+
+        try
+        {
+            itemDto.Album = new AlbumDto { Photos = existingPhotos };
+            await ItemService.UpdateItemAsync(itemDto, selectedFiles);
+            Navigation.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private static string ToDataUrl(PhotoDto photo)
+    {
+        var mime = photo.Filetype.Equals("PNG", StringComparison.OrdinalIgnoreCase)
+            ? "image/png"
+            : "image/jpeg";
+        return $"data:{mime};base64,{Convert.ToBase64String(photo.Data)}";
+    }
+}

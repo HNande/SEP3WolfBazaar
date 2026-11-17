@@ -8,6 +8,45 @@ public class LocalUserService : IUserService
     private readonly List<StoredUser> _users = new();
     private int _nextId = 1;
 
+    public LocalUserService()
+    {
+        _users.Add(new StoredUser(
+            Id: _nextId++,
+            FirstName: "A",
+            LastName: "S",
+            Name: "KC_test",
+            Email: "KC@test.bla",
+            Password: "12345678"));
+        _users.Add(new StoredUser(
+            Id: _nextId++,
+            FirstName: "N",
+            LastName: "H",
+            Name: "NH_test",
+            Email: "NH@test.bla",
+            Password: "12345678"));
+        _users.Add(new StoredUser(
+            Id: _nextId++,
+            FirstName: "S",
+            LastName: "G",
+            Name: "SG_test",
+            Email: "SG@test.bla",
+            Password: "12345678"));
+        _users.Add(new StoredUser(
+            Id: _nextId++,
+            FirstName: "Bu",
+            LastName: "...",
+            Name: "Bu_test",
+            Email: "Bu@test.bla",
+            Password: "12345678"));
+        _users.Add(new StoredUser(
+            Id: _nextId++,
+            FirstName: "Ka",
+            LastName: "...",
+            Name: "Ka_test",
+            Email: "Ka@test.bla",
+            Password: "12345678"));
+    }
+
     private record StoredUser(int Id, string FirstName, string LastName, string Name, string Email, string Password);
 
     public Task<UserDto> RegisterAsync(CreateUserDto dto)

@@ -82,7 +82,7 @@
             isSubmitting = true;
             await UserService.RegisterAsync(model);
 
-            await ((SimpleAuthProvider)AuthProvider).Login(model.MemberName, model.Password);
+            await ((AuthProvider)AuthProvider).Login(model.MemberName, model.Password);
             Navigation.NavigateTo("/");
         }
         catch (Exception ex)

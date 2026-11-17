@@ -13,8 +13,8 @@ public class ItemSummaryDto
 
     public int Price { get; set; }
 
-    // [JsonPropertyName("ownerId")]
-    // public int OwnerId { get; set; }
+    [JsonPropertyName("ownerId")]
+    public int OwnerId { get; set; }
 
     [JsonIgnore]
     public string? ImageUrl { get; set; }
