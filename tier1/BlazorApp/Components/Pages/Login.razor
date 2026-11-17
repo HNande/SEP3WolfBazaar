@@ -64,7 +64,7 @@
         try
         {
             isSubmitting = true;
-            await ((SimpleAuthProvider)AuthProvider).Login(userName, password);
+            await ((AuthProvider)AuthProvider).Login(userName, password);
             Navigation.NavigateTo("/");
         }
         catch (Exception ex)

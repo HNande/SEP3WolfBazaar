@@ -157,4 +157,25 @@ public class HttpItemService : IItemService
         if (!response.IsSuccessStatusCode)
             throw new Exception(await ReadErrorAsync(response));
     }
+    
+    public async Task UpdateItemAsync(ItemDto itemDto, IEnumerable<IBrowserFile> newFiles)
+    {
+        var existingPhotos = itemDto.Album?.Photos ?? new List<PhotoDto>();
+        var fileList = newFiles?.ToList() ?? new List<IBrowserFile>();
+
+        if (existingPhotos.Count + fileList.Count > MaxPictures)
+            throw new ArgumentException($"You can have a maximum of {MaxPictures} pictures in total.");
+
+        if (existingPhotos.Count + fileList.Count == 0)
+            throw new ArgumentException("Item must have at least one picture.");
+
+        var newAlbum = await BuildAlbumAsync(itemDto.Name, fileList);
+        existingPhotos.AddRange(newAlbum.Photos);
+
+        itemDto.Album = new AlbumDto { Photos = existingPhotos };
+
+        var response = await _http.PutAsJsonAsync($"api/item/{itemDto.Id}", itemDto);
+        if (!response.IsSuccessStatusCode)
+            throw new Exception(await ReadErrorAsync(response));
+    }
 }

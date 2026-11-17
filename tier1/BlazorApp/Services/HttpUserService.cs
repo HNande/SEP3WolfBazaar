@@ -13,8 +13,8 @@ public class HttpUserService : IUserService
         _http = httpClient;
     }
 
-    private record RegisteredMember(string FirstName, string LastName, string Username, string? Email);
-    private record LoginResponse(string Name);
+    private record RegisteredMember(string FirstName, string LastName, string Username, string? Email, int MemberId = 0);
+    private record LoginResponse(string Name, string? Email = null, int MemberId = 0);
 
     public async Task<UserDto> RegisterAsync(CreateUserDto dto)
     {
@@ -35,6 +35,7 @@ public class HttpUserService : IUserService
 
         return new UserDto
         {
+            Id = member.MemberId,
             MemberName = member.Username,
             MemberEmail = member.Email ?? dto.MemberEmail.Trim()
         };
@@ -58,7 +59,9 @@ public class HttpUserService : IUserService
 
         return new UserDto
         {
-            MemberName = loginResult.Name
+            Id = loginResult.MemberId,
+            MemberName = loginResult.Name,
+            MemberEmail = loginResult.Email ?? string.Empty
         };
     }
 

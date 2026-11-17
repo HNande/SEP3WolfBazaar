@@ -7,7 +7,7 @@ using Microsoft.JSInterop;
 
 namespace BlazorApp.Auth;
 
-public class SimpleAuthProvider : AuthenticationStateProvider
+public class AuthProvider : AuthenticationStateProvider
 {
     private const string StorageKey = "currentUser";
 
@@ -16,7 +16,7 @@ public class SimpleAuthProvider : AuthenticationStateProvider
     private readonly IUserService userService;
     private readonly IJSRuntime js;
 
-    public SimpleAuthProvider(IUserService userService, IJSRuntime js)
+    public AuthProvider(IUserService userService, IJSRuntime js)
     {
         this.userService = userService;
         this.js = js;

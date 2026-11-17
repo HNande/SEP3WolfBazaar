@@ -8,13 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddHttpClient<IItemService, HttpItemService>(client =>
-{
-    client.BaseAddress = new Uri("http://localhost:8080/");
-});
-
 // for tests without server
 builder.Services.AddSingleton<IUserService, LocalUserService>();
+builder.Services.AddSingleton<IItemService, LocalItemService>();
 
 // for normal run
 //builder.Services.AddHttpClient<IUserService, HttpUserService>(client =>
@@ -22,7 +18,12 @@ builder.Services.AddSingleton<IUserService, LocalUserService>();
 //    client.BaseAddress = new Uri("http://localhost:8080/");
 //});
 
-builder.Services.AddScoped<AuthenticationStateProvider, SimpleAuthProvider>();
+//builder.Services.AddHttpClient<IItemService, HttpItemService>(client =>
+//{
+//    client.BaseAddress = new Uri("http://localhost:8080/");
+//});
+
+builder.Services.AddScoped<AuthenticationStateProvider, AuthProvider>();
 builder.Services.AddAuthorizationCore();
 
 var app = builder.Build();

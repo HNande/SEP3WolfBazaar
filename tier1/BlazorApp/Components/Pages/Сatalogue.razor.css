@@ -152,7 +152,26 @@
 .item-actions {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    width: 100%;
     gap: 8px;
+}
+
+.update-btn {
+    border: 1px solid rgba(56, 189, 248, 0.5);
+    color: #38bdf8;
+    background-color: rgba(56, 189, 248, 0.08);
+    border-radius: 20px;
+    padding: 4px 16px;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.update-btn:hover {
+    background-color: rgba(56, 189, 248, 0.2);
+    border-color: #38bdf8;
+    color: #f0fdf4;
+    text-decoration: none;
 }
 
 .delete-btn {

@@ -44,7 +44,7 @@
 
     private async Task LogoutAsync()
     {
-        await ((SimpleAuthProvider)AuthProvider).Logout();
+        await ((AuthProvider)AuthProvider).Logout();
         Navigation.NavigateTo("/");
     }
 
