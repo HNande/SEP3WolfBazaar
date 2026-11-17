@@ -114,6 +114,25 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
             fail(responseObserver, e, "remove item listing");
         }
     }
+    //TODO: Add picture and keyword update
+    @Override
+    public void updateItemListing(UpdateItemListingRequest request,
+                                  io.grpc.stub.StreamObserver<com.google.protobuf.Empty> responseObserver) {
+        try {
+            boolean updated = service.updateItem(request);
+            if (updated) {
+                responseObserver.onNext(com.google.protobuf.Empty.getDefaultInstance());
+                responseObserver.onCompleted();
+                LOG.info("Item listing [ id={} ] updated successfully", request.getItemId());
+            } else {
+                responseObserver.onError(io.grpc.Status.NOT_FOUND
+                        .withDescription("Item listing with id " + request.getItemId() + " not found")
+                        .asRuntimeException());
+            }
+        } catch (Exception e) {
+            fail(responseObserver, e, "update item listing");
+        }
+    }
 
     private void fail(StreamObserver<?> responseObserver, Exception e, String action) {
         IllegalArgumentException invalid = findIllegalArgument(e);
