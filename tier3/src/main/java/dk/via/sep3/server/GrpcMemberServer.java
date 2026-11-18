@@ -34,10 +34,14 @@ public class GrpcMemberServer extends MemberServiceGrpc.MemberServiceImplBase {
                     request.getPassword(),
                     request.getMemberEmail()
             );
+
+            if (createdMember.isEmpty()) {
+                responseObserver.onError(Status.ALREADY_EXISTS.withDescription("Username is already taken").asRuntimeException());
+                LOG.warn("Registration failed: Username is already taken");
+                return;
+            }
+
             LOG.info("Successfully added Member: {}", request.getMemberName());
-            //if (responseObserver.onError(Status.ALREADY_EXISTS)) {
-            //
-            //}
             dk.via.sep3.entities.Member member = createdMember.get();
             dk.via.sep3.generated.Member protoMember = dk.via.sep3.generated.Member.newBuilder()
                 .setFirstName(member.getFirstName())
@@ -49,10 +53,6 @@ public class GrpcMemberServer extends MemberServiceGrpc.MemberServiceImplBase {
             MemberResponse response = MemberResponse.newBuilder().setMember(protoMember).build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
-           // else {
-           //     responseObserver.onError(Status.ALREADY_EXISTS.withDescription("Username is already taken").asRuntimeException());
-           //     LOG.warn("Registration failed: Username is already taken");
-           // }
 
         } catch(Exception e)
             {
