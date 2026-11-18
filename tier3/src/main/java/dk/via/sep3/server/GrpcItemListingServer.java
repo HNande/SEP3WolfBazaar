@@ -30,8 +30,7 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
     public void addItemListing(AddItemListingRequest request,
         StreamObserver<Empty> responseObserver) {
         try {
-            ItemListingResponseDTO created =
-                service.addItem(ItemListingDataMapper.toDomainDTO(request));
+            ItemListingResponseDTO created = service.addItem(ItemListingDataMapper.toDomainDTO(request));
             responseObserver.onNext(Empty.getDefaultInstance());
             responseObserver.onCompleted();
             LOG.info("Item listing [ id={}, name={} ] added successfully",

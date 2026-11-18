@@ -1,5 +1,6 @@
 package dk.via.sep3.client;
 
+import com.google.protobuf.Empty;
 import dk.via.sep3.generated.*;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -23,15 +24,15 @@ public class MemberGrpcClient {
     public MemberGrpcClient(MemberServiceGrpc.MemberServiceBlockingStub stub) {
         this.stub = stub;
     }
-    public boolean addMember(AddMemberRequest request) {
+    public Optional<MemberResponse> addMember(AddMemberRequest request) {
         try {
-            stub.withDeadlineAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                    .addMember(request);
-            return true;
+            MemberResponse response = stub.withDeadlineAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS).addMember(request);
+            return Optional.of(response);
+
 
         } catch (StatusRuntimeException e) {
             if (e.getStatus().getCode() == Status.Code.ALREADY_EXISTS) {
-                return false;
+                return Optional.empty();
             }
             throw translate(e, "add member");
         }
