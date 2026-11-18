@@ -1,7 +1,7 @@
-package dk.via.sep3.repository;
+package dk.via.sep3.dto;
 
-public record ImageResponseDTO(
-    String name,
+public record ThumbnailResponseDTO(
+    int itemId,
     ImageFileTypeJsonDTO filetype,
     int width,
     int height,
