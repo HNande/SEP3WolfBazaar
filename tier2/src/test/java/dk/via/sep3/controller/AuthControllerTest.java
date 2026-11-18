@@ -2,8 +2,8 @@ package dk.via.sep3.controller;
 
 import dk.via.sep3.exception.ApiExceptionHandler;
 import dk.via.sep3.exception.UpstreamException;
-import dk.via.sep3.repository.LoginMemberJsonDTO;
-import dk.via.sep3.repository.MemberResponseDTO;
+import dk.via.sep3.dto.LoginMemberJsonDTO;
+import dk.via.sep3.dto.MemberResponseDTO;
 import dk.via.sep3.service.MemberService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -53,12 +53,12 @@ class AuthControllerTest {
         @DisplayName("returns 200 with the trimmed username as name")
         void one_validCredentials_returns200() throws Exception {
             when(service.login(any(LoginMemberJsonDTO.class)))
-                    .thenReturn(Optional.of(new MemberResponseDTO("Fen", "Rir", "fenrir99")));
+                    .thenReturn(Optional.of(new MemberResponseDTO(1, "fenrir99", "fenrir@wolf.dk", "Fen", "Rir")));
 
             mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                             .content(body(" fenrir99 ", "password123")))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.name").value("fenrir99"))
+                    .andExpect(jsonPath("$.memberName").value("fenrir99"))
                     .andExpect(jsonPath("$.password").doesNotExist());
         }
 
