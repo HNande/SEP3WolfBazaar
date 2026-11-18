@@ -1,4 +1,4 @@
-package dk.via.sep3.repository;
+package dk.via.sep3.dto;
 
 import dk.via.sep3.generated.Category;
 
@@ -13,6 +13,7 @@ public record ItemListingResponseDTO(
     List<Category> categoryList,
     int year,
     int month,
-    int day
+    int day,
+    int ownerId
     ){
 }

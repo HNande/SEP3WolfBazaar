@@ -1,10 +1,10 @@
 package dk.via.sep3.controller;
 
 import jakarta.validation.Valid;
-import dk.via.sep3.repository.ItemListingJsonDTO;
-import dk.via.sep3.repository.ItemListingResponseDTO;
-import dk.via.sep3.repository.ItemSummaryResponseDTO;
-import dk.via.sep3.repository.ThumbnailResponseDTO;
+import dk.via.sep3.dto.ItemListingJsonDTO;
+import dk.via.sep3.dto.ItemListingResponseDTO;
+import dk.via.sep3.dto.ItemSummaryResponseDTO;
+import dk.via.sep3.dto.ThumbnailResponseDTO;
 import dk.via.sep3.service.ItemListingService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -47,4 +47,11 @@ public class ItemListingController {
   public void deleteItemListing(@PathVariable int id) {
     itemListingService.removeItem(id);     // throws Status code 404 on not found
   }
+
+  @PutMapping("/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void updateItem(@PathVariable int id, @Valid @RequestBody ItemListingJsonDTO form) {
+    itemListingService.updateItem(id, form);
+  }
+
 }

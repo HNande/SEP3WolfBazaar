@@ -5,31 +5,30 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import dk.via.sep3.exception.InvalidRequestException;
 import dk.via.sep3.exception.UpstreamException;
-import dk.via.sep3.repository.ItemListingJsonDTO;
-import dk.via.sep3.repository.ItemListingMapper;
-import dk.via.sep3.repository.ItemPageResponseDTO;
+import dk.via.sep3.dto.ItemListingJsonDTO;
+import dk.via.sep3.mapper.ItemListingMapper;
+import dk.via.sep3.dto.ItemPageResponseDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-@Repository
+@Component
 public class ItemListingGrpcClient  {
 
     private static final Logger LOG = LoggerFactory.getLogger(ItemListingGrpcClient.class);
-    private static final long TIMEOUT_SECONDS = 10;
-    private static final long THUMBNAIL_TIMEOUT_SECONDS = 30;
+    private static final int TIMEOUT_SECONDS = 10;
+    private static final int THUMBNAIL_TIMEOUT_SECONDS = 30;
     private static final int DEFAULT_PAGE_SIZE = 50;
     private static final int SUMMARY_PAGE_SIZE = 200;
 
     private final ItemListingServiceGrpc.ItemListingServiceBlockingStub stub;
 
-    public ItemListingGrpcClient(
-        ItemListingServiceGrpc.ItemListingServiceBlockingStub stub) {
+    public ItemListingGrpcClient(ItemListingServiceGrpc.ItemListingServiceBlockingStub stub) {
         this.stub = stub;
     }
 
@@ -132,6 +131,20 @@ public class ItemListingGrpcClient  {
             throw translate(e, "remove item " + id);
         }
     }
+
+    public boolean updateItem(int id, ItemListingJsonDTO dto) {
+        try {
+            stub.withDeadlineAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .updateItemListing(ItemListingMapper.toUpdateRequest(id, dto));
+            return true;
+        } catch (StatusRuntimeException e) {
+            if (e.getStatus().getCode() == Status.Code.NOT_FOUND) {
+                return false;
+            }
+            throw translate(e, "update item " + id);
+        }
+    }
+
     private RuntimeException translate(StatusRuntimeException e, String action) {
         Status status = e.getStatus();
         if (status.getCode() == Status.Code.INVALID_ARGUMENT) {

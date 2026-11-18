@@ -1,4 +1,4 @@
-package dk.via.sep3.repository;
+package dk.via.sep3.dto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -16,9 +16,15 @@ public record ItemListingJsonDTO(
         message = "Description must be between {min} and {max} characters")
      String description,
 
-    @Positive(message = "Price must be greater than 0")
+    //In uc description we say a price value of 0 is considered "free", and is considered valid
+    //apparently Dec rejects free items, so min is a better choice
+    @NotNull @Min(value = 0, message = "Price cannot be negative")
     int price,
-     @Valid List<ImageJsonDTO> imageList
+
+    @Valid List<ImageJsonDTO> imageList,
+
+    @NotNull
+    int ownerId
 ) {
 
 }

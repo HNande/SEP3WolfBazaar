@@ -1,6 +1,8 @@
 @page "/"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using Microsoft.AspNetCore.Components.Authorization
 @inject IItemService ItemService
+@inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager Navigation
 
 <div class="page-container">
@@ -81,30 +83,42 @@
                                 <strong>Price:</strong> $@item.Price.ToString("N0")
                             </p>
 
-                            <div class="item-actions mt-auto pt-3">
-                                @if (confirmDeleteId == item.Id)
-                                {
-                                    <span class="delete-confirm-text">Delete?</span>
-                                    <button class="btn btn-sm btn-danger"
-                                            disabled="@(deletingId == item.Id)"
-                                            @onclick="() => DeleteItemAsync(item.Id)">
-                                        @(deletingId == item.Id ? "Deleting..." : "Yes")
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-secondary"
-                                            disabled="@(deletingId == item.Id)"
-                                            @onclick="CancelDelete">
-                                        Cancel
-                                    </button>
-                                }
-                                else
-                                {
-                                    <button class="btn btn-sm delete-btn"
-                                            disabled="@(deletingId != null)"
-                                            @onclick="() => AskDelete(item.Id)">
-                                        Delete
-                                    </button>
-                                }
-                            </div>
+                            @if (currentUserId.HasValue && item.OwnerId == currentUserId.Value)
+                            {
+                                <div class="item-actions mt-auto pt-3">
+                                    <div class="d-flex align-items-center gap-2">
+                                        @if (confirmDeleteId == item.Id)
+                                        {
+                                            <span class="delete-confirm-text">Delete?</span>
+                                            <button class="btn btn-sm btn-danger"
+                                                    disabled="@(deletingId == item.Id)"
+                                                    @onclick="() => DeleteItemAsync(item.Id)">
+                                                @(deletingId == item.Id ? "Deleting..." : "Yes")
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-secondary"
+                                                    disabled="@(deletingId == item.Id)"
+                                                    @onclick="CancelDelete">
+                                                Cancel
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-sm delete-btn"
+                                                    disabled="@(deletingId != null)"
+                                                    @onclick="() => AskDelete(item.Id)">
+                                                Delete
+                                            </button>
+                                        }
+                                    </div>
+
+                                    @if (confirmDeleteId != item.Id)
+                                    {
+                                        <a href="update_item/@item.Id" class="btn btn-sm update-btn">
+                                            Update
+                                        </a>
+                                    }
+                                </div>
+                            }
                         </div>
                     </div>
                 }
@@ -135,9 +149,17 @@
     private int? confirmDeleteId;
     private int? deletingId;
     private string? actionErrorMessage;
+    private int? currentUserId;
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var idClaim = authState.User.FindFirst("Id")?.Value;
+        if (int.TryParse(idClaim, out int parsedId) && parsedId > 0)
+        {
+            currentUserId = parsedId;
+        }
+
         await LoadDataAsync();
     }
 

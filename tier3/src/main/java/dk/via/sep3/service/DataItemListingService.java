@@ -5,6 +5,7 @@ import dk.via.sep3.dao.ItemSummaryDAO;
 import dk.via.sep3.dto.ItemListingDataDTO;
 import dk.via.sep3.dto.ItemListingResponseDTO;
 import dk.via.sep3.dto.ThumbnailDataDTO;
+import dk.via.sep3.generated.UpdateItemListingRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,7 +25,7 @@ public class DataItemListingService {
     }
 
     public ItemListingResponseDTO addItem(ItemListingDataDTO dto) {
-        if (dto.album() == null || dto.album().images().isEmpty()) {
+        if (dto.album() == null || dto.album().images() == null || dto.album().images().isEmpty()) {
             throw new IllegalArgumentException("A listing needs at least one picture");
         }
         return itemListingDAO.addNewItemListing(dto);
@@ -53,5 +54,14 @@ public class DataItemListingService {
                     "Between 1 and " + MAX_THUMBNAIL_IDS + " item ids are required");
         }
         return itemSummaryDAO.getFirstThumbnails(ids.stream().distinct().toList());
+    }
+
+    public boolean updateItem(UpdateItemListingRequest request) {
+        return itemListingDAO.updateItemListing(
+                request.getItemId(),
+                request.getItemName(),
+                request.getDescription(),
+                request.getPrice()
+        );
     }
 }

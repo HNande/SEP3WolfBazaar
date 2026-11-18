@@ -10,4 +10,5 @@ public interface IItemService
     Task<IEnumerable<ItemSummaryDto>> GetItemSummariesAsync();
     Task<Dictionary<int, string>> GetThumbnailsAsync(IEnumerable<int> ids);
     Task DeleteItemAsync(int id);
+    Task UpdateItemAsync(ItemDto itemDto, IEnumerable<IBrowserFile> newFiles);
 }

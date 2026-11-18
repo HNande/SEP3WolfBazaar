@@ -1,5 +1,6 @@
 package dk.via.sep3.client;
 
+import com.google.protobuf.Empty;
 import dk.via.sep3.generated.*;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -9,30 +10,45 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Component
 public class MemberGrpcClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(MemberGrpcClient.class);
-    private static final long TIMEOUT_SECONDS = 10;
+    private static final int TIMEOUT_SECONDS = 10;
 
     private final MemberServiceGrpc.MemberServiceBlockingStub stub;
 
     public MemberGrpcClient(MemberServiceGrpc.MemberServiceBlockingStub stub) {
         this.stub = stub;
     }
-    public boolean addMember(AddMemberRequest request) {
+    public Optional<MemberResponse> addMember(AddMemberRequest request) {
         try {
-            stub.withDeadlineAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                    .addMember(request);
-            return true;
+            MemberResponse response = stub.withDeadlineAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS).addMember(request);
+            return Optional.of(response);
+
 
         } catch (StatusRuntimeException e) {
             if (e.getStatus().getCode() == Status.Code.ALREADY_EXISTS) {
-                return false;
+                return Optional.empty();
             }
             throw translate(e, "add member");
+        }
+    }
+
+    public Optional<MemberResponse> login(LoginRequest request) {
+        try {
+            MemberResponse response = stub.withDeadlineAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    .login(request);
+            return Optional.of(response);
+
+        } catch (StatusRuntimeException e) {
+            if (e.getStatus().getCode() == Status.Code.NOT_FOUND) {
+                return Optional.empty();
+            }
+            throw translate(e, "login");
         }
     }
 

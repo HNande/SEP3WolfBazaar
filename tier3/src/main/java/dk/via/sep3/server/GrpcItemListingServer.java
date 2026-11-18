@@ -30,8 +30,7 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
     public void addItemListing(AddItemListingRequest request,
         StreamObserver<Empty> responseObserver) {
         try {
-            ItemListingResponseDTO created =
-                service.addItem(ItemListingDataMapper.toDomainDTO(request));
+            ItemListingResponseDTO created = service.addItem(ItemListingDataMapper.toDomainDTO(request));
             responseObserver.onNext(Empty.getDefaultInstance());
             responseObserver.onCompleted();
             LOG.info("Item listing [ id={}, name={} ] added successfully",
@@ -59,6 +58,7 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
         }
     }
 
+    @Override
     public void getListItemSummaries(ListItemListingSummaryRequest request,
         StreamObserver<ListItemSummariesResponse> responseObserver) {
         try {
@@ -111,6 +111,25 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
             }
         } catch (Exception e) {
             fail(responseObserver, e, "remove item listing");
+        }
+    }
+    //TODO: Add picture and keyword update
+    @Override
+    public void updateItemListing(UpdateItemListingRequest request,
+                                  io.grpc.stub.StreamObserver<com.google.protobuf.Empty> responseObserver) {
+        try {
+            boolean updated = service.updateItem(request);
+            if (updated) {
+                responseObserver.onNext(com.google.protobuf.Empty.getDefaultInstance());
+                responseObserver.onCompleted();
+                LOG.info("Item listing [ id={} ] updated successfully", request.getItemId());
+            } else {
+                responseObserver.onError(io.grpc.Status.NOT_FOUND
+                        .withDescription("Item listing with id " + request.getItemId() + " not found")
+                        .asRuntimeException());
+            }
+        } catch (Exception e) {
+            fail(responseObserver, e, "update item listing");
         }
     }
 

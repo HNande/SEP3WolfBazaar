@@ -67,7 +67,10 @@ main {
     display: flex;
 }
 
-.top-row > div:not(.client-photo-container) {
+.auth-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
     background: linear-gradient(135deg, #fef08a 0%, #fde047 100%);
     color: #1e293b;
     padding: 6px 18px;
@@ -76,8 +79,37 @@ main {
     font-size: 0.9rem;
     box-shadow: 0 0 15px rgba(253, 224, 71, 0.4);
     border: 1px solid #fef08a;
-    cursor: pointer;
     transition: all 0.3s ease;
+}
+
+.auth-box:hover {
+    box-shadow: 0 0 22px rgba(253, 224, 71, 0.7);
+    transform: translateY(-1px);
+}
+
+.auth-box ::deep a.auth-pill,
+.auth-box ::deep button.auth-pill {
+    margin: 0 !important;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: #1e293b;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    cursor: pointer;
+    line-height: 1.2;
+}
+
+.auth-box ::deep a.auth-pill:hover,
+.auth-box ::deep button.auth-pill:hover {
+    text-decoration: underline;
+}
+
+.auth-user {
+    color: #1e293b;
+    padding-right: 0.5rem;
+    border-right: 1px solid rgba(30, 41, 59, 0.25);
 }
 
 .client-photo-container {
@@ -93,11 +125,6 @@ main {
 
 .client-photo-container:hover {
     box-shadow: 0 0 22px rgba(253, 224, 71, 0.7) !important;
-    transform: translateY(-1px);
-}
-
-.top-row > div:not(.client-photo-container):hover {
-    box-shadow: 0 0 22px rgba(253, 224, 71, 0.7);
     transform: translateY(-1px);
 }
 
@@ -119,30 +146,9 @@ main {
     color: #f0fdf4;
 }
 
-.top-row ::deep a, .top-row ::deep .btn-link {
-    white-space: nowrap;
-    margin-left: 1.5rem;
-    text-decoration: none;
-}
-
-.top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
-    text-decoration: underline;
-}
-
-.top-row ::deep a:first-child {
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-
-
 @media (max-width: 640.98px) {
     .top-row {
         justify-content: space-between;
-    }
-
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        margin-left: 0;
     }
 }
 
@@ -162,12 +168,6 @@ main {
         position: sticky;
         top: 0;
         z-index: 1;
-    }
-
-    .top-row.auth ::deep a:first-child {
-        flex: 1;
-        text-align: right;
-        width: 0;
     }
 
     .top-row, article {

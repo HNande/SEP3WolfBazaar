@@ -1,4 +1,4 @@
-package dk.via.sep3.repository;
+package dk.via.sep3.dto;
 
 public final class ItemListingConstraints {
   public static final int ITEM_NAME_MIN   = 8;

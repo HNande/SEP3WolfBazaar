@@ -21,15 +21,37 @@
                     <div class="auth-error">@errorMessage</div>
                 }
 
-                <form @onsubmit="RegisterAsync" @onsubmit:preventDefault>
+                <EditForm Model="model" OnValidSubmit="RegisterAsync" Context="formContext">
+                    <DataAnnotationsValidator />
+
                     <div class="mb-3">
                         <label for="reg-name">User name</label>
-                        <input id="reg-name" type="text" class="auth-input" @bind="userName" autocomplete="username" />
+                        <InputText id="reg-name" class="auth-input" @bind-Value="model.MemberName" autocomplete="username" />
+                        <ValidationMessage For="@(() => model.MemberName)" class="text-danger small" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="reg-first">First name</label>
+                        <InputText id="reg-first" class="auth-input" @bind-Value="model.FirstName" autocomplete="given-name" />
+                        <ValidationMessage For="@(() => model.FirstName)" class="text-danger small" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="reg-last">Last name</label>
+                        <InputText id="reg-last" class="auth-input" @bind-Value="model.LastName" autocomplete="family-name" />
+                        <ValidationMessage For="@(() => model.LastName)" class="text-danger small" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="reg-email">Email</label>
+                        <InputText id="reg-email" type="email" class="auth-input" @bind-Value="model.MemberEmail" autocomplete="email" />
+                        <ValidationMessage For="@(() => model.MemberEmail)" class="text-danger small" />
                     </div>
 
                     <div class="mb-3">
                         <label for="reg-password">Password</label>
-                        <input id="reg-password" type="password" class="auth-input" @bind="password" autocomplete="new-password" />
+                        <InputText id="reg-password" type="password" class="auth-input" @bind-Value="model.Password" autocomplete="new-password" />
+                        <ValidationMessage For="@(() => model.Password)" class="text-danger small" />
                     </div>
 
                     <div class="auth-actions">
@@ -38,7 +60,7 @@
                             @(isSubmitting ? "Creating..." : "Register")
                         </button>
                     </div>
-                </form>
+                </EditForm>
 
                 <p class="auth-switch">Already have an account? <a href="login">Log in</a></p>
             </div>
@@ -47,8 +69,7 @@
 </div>
 
 @code {
-    private string userName = string.Empty;
-    private string password = string.Empty;
+    private readonly CreateUserDto model = new();
     private string? errorMessage;
     private bool isSubmitting;
 
@@ -56,24 +77,12 @@
     {
         errorMessage = null;
 
-        if (string.IsNullOrWhiteSpace(userName))
-        {
-            errorMessage = "User name cannot be empty.";
-            return;
-        }
-
-        if (string.IsNullOrEmpty(password))
-        {
-            errorMessage = "Enter a password.";
-            return;
-        }
-
         try
         {
             isSubmitting = true;
-            await UserService.RegisterAsync(new CreateUserDto { Name = userName, Password = password });
+            await UserService.RegisterAsync(model);
 
-            await ((SimpleAuthProvider)AuthProvider).Login(userName, password);
+            await ((AuthProvider)AuthProvider).Login(model.MemberName, model.Password);
             Navigation.NavigateTo("/");
         }
         catch (Exception ex)

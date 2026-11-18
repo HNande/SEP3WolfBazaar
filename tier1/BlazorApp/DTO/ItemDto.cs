@@ -22,6 +22,6 @@ public class ItemDto
 
     public AlbumDto? Album { get; set; }
 
-    // [JsonPropertyName("ownerId")]
-    // public int OwnerId { get; set; }
+    [JsonPropertyName("ownerId")]
+    public int OwnerId { get; set; }
 }

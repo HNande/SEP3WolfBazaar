@@ -1,6 +1,7 @@
-package dk.via.sep3.repository;
+package dk.via.sep3.mapper;
 
 import com.google.protobuf.ByteString;
+import dk.via.sep3.dto.*;
 import dk.via.sep3.generated.*;
 
 import java.util.*;
@@ -22,7 +23,8 @@ public final class ItemListingMapper {
     AddItemListingRequest.Builder builder = AddItemListingRequest.newBuilder()
         .setItemName(dto.itemName())
         .setDescription(dto.description())
-        .setPrice(dto.price());
+        .setPrice(dto.price())
+        .setOwnerId(dto.ownerId());
 
     for (int i = 0; i < dto.imageList().size(); i++) {
     builder.addImages(toImage(dto.imageList().get(i)));
@@ -30,6 +32,20 @@ public final class ItemListingMapper {
 
     return builder.build();
   }
+
+  public static UpdateItemListingRequest toUpdateRequest(int id, ItemListingJsonDTO dto) {
+    UpdateItemListingRequest.Builder builder = UpdateItemListingRequest.newBuilder()
+        .setItemId(id)
+        .setItemName(dto.itemName())
+        .setDescription(dto.description())
+        .setPrice(dto.price());
+
+    for (ImageJsonDTO image : dto.imageList()) {
+      builder.addImages(toImage(image));
+    }
+    return builder.build();
+  }
+
   public static ItemListingResponseDTO toResponse(ItemListing item) {
       List<ImageResponseDTO> images = new ArrayList<>();
     for(int i = 0; i < item.getImagesList().size();i++)
@@ -43,7 +59,8 @@ public final class ItemListingMapper {
         item.getCategoriesList(),
         item.getDate().getYear(),
         item.getDate().getMonth(),
-        item.getDate().getDay());
+        item.getDate().getDay(),
+        item.getOwnerId());
   }
   public static ItemSummaryResponseDTO toSummaryResponse(ItemSummary item) {
     return new ItemSummaryResponseDTO(
@@ -51,9 +68,8 @@ public final class ItemListingMapper {
         item.getItemName(),
         emptyToNull(item.getDescription()),
         item.getPrice(),
-        item.getDate().getYear(),
-        item.getDate().getMonth(),
-        item.getDate().getDay());
+        item.getOwnerId());
+
   }
 
   public static ThumbnailResponseDTO toThumbnailResponse(ItemThumbnail t) {

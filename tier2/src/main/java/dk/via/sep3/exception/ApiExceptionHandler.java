@@ -37,8 +37,7 @@ public class ApiExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> unreadableBody(HttpMessageNotReadableException e) {
         LOG.warn("Unreadable request body: {}", e.getMessage());
-        return build(HttpStatus.BAD_REQUEST,
-                "Malformed JSON or invalid value (check image filetype and base64 data)");
+        return build(HttpStatus.BAD_REQUEST, "Malformed JSON or invalid value");
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)

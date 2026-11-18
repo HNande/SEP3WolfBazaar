@@ -28,23 +28,43 @@ public class ItemListingDataMapper {
         request.getItemName(),
         request.getDescription(),
         request.getPrice(),
-        new AlbumDataDTO(request.getItemName() + " Album", images));
+        new AlbumDataDTO(request.getItemName() + " Album", images),
+            request.getOwnerId());
   }
 
   public static ItemListingResponseDTO toResponseDTO(ItemListing itemListing) {
     LocalDate date = itemListing.getListDate();
     return new ItemListingResponseDTO(
-            itemListing.getItemId(),
-            itemListing.getItemName(),
-            itemListing.getDescription(),
-            itemListing.getPrice(),
-            toDTO(itemListing.getPictures()),
-            //TODO We are missing category get method
-            itemListing.getCategories(),
-            date.getYear(),
-            date.getMonthValue(),
-            date.getDayOfMonth());
+        itemListing.getItemId(),
+        itemListing.getItemName(),
+        itemListing.getDescription(),
+        itemListing.getPrice(),
+        toDTO(itemListing.getPictures()),
+        toCategoryDTOs(itemListing.getCategories()),
+        date.getYear(),
+        date.getMonthValue(),
+        date.getDayOfMonth(),
+        itemListing.getOwnerId()
+    );
   }
+
+  private static List<dk.via.sep3.generated.Category> toCategoryDTOs(
+      Set<dk.via.sep3.entities.Category> categories) {
+    return categories.stream()
+        .map(c -> toProtoCategory(c.getName()))
+        .filter(c -> c != dk.via.sep3.generated.Category.CATEGORY_UNSPECIFIED)
+        .toList();
+  }
+
+  private static dk.via.sep3.generated.Category toProtoCategory(String name) {
+    try {
+      return dk.via.sep3.generated.Category.valueOf(
+          "CATEGORY_" + name.trim().toUpperCase(Locale.ROOT));
+    } catch (IllegalArgumentException e) {
+      return dk.via.sep3.generated.Category.CATEGORY_UNSPECIFIED;
+    }
+  }
+
 
   public static List<ImageDataDTO> toDTO(List<ItemPicture> pictures) {
     if (pictures == null) {
@@ -86,12 +106,13 @@ public class ItemListingDataMapper {
         .setItemName(orEmpty(dto.itemName()))
         .setDescription(orEmpty(dto.description()))
         .setPrice(dto.price())
+        .addAllCategories(dto.categoryList())
+        .setOwnerId(dto.ownerId())
         .setDate(dk.via.sep3.generated.Date.newBuilder()
             .setYear(dto.year())
             .setMonth(dto.month())
             .setDay(dto.day())
             .build());
-
     return builder.build();
   }
 
@@ -119,18 +140,13 @@ public class ItemListingDataMapper {
   }
 
   public static ItemSummary toProtoSummary(ItemSummaryDataDTO dto) {
-    dk.via.sep3.generated.Date protoDate =  dk.via.sep3.generated.Date.newBuilder()
-            .setYear(dto.listDate().getYear())
-            .setMonth(dto.listDate().getMonthValue())
-            .setDay(dto.listDate().getDayOfMonth())
-            .build();
 
     return ItemSummary.newBuilder()
             .setId(dto.itemId())
             .setItemName(orEmpty(dto.itemName()))
             .setDescription(orEmpty(dto.description()))
             .setPrice(dto.price())
-            .setDate(protoDate)
+            .setOwnerId(dto.ownerId())
             .build();
   }
 

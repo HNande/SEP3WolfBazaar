@@ -50,6 +50,7 @@ public class ItemListingDAO {
     listing.setDescription(dto.description());
     listing.setPrice(dto.price());
     listing.setListDate(LocalDate.now());
+    listing.setOwnerId(dto.ownerId());
 
     Map<Path, byte[]> filesToWrite = new LinkedHashMap<>();
     if (dto.album() != null && dto.album().images() != null) {
@@ -134,6 +135,28 @@ public class ItemListingDAO {
     List<ItemListingResponseDTO> items =
             pageRows.stream().map(ItemListingDataMapper::toResponseDTO).toList();
     return new ItemListingPage(items, nextToken);
+  }
+
+  @Transactional
+  public boolean updateItemListing(int itemId, String newName, String newDesc, int newPrice) {
+    Optional<ItemListing> existingOpt = itemListingRepository.findById(itemId);
+    if (existingOpt.isEmpty()) {
+      return false;
+    }
+
+    ItemListing listing = existingOpt.get();
+
+    if (newName != null && !newName.isBlank()) {
+      listing.setItemName(newName);
+    }
+    if (newDesc != null && !newDesc.isBlank()) {
+      listing.setDescription(newDesc);
+    }
+
+    listing.setPrice(newPrice);
+
+    itemListingRepository.save(listing);
+    return true;
   }
 
   public record ItemListingPage(List<ItemListingResponseDTO> items, String nextPageToken) {}

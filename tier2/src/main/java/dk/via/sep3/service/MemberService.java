@@ -2,9 +2,11 @@ package dk.via.sep3.service;
 
 import dk.via.sep3.generated.*;
 import dk.via.sep3.client.MemberGrpcClient;
-import dk.via.sep3.repository.MemberConstraints;
-import dk.via.sep3.repository.MemberResponseDTO;
-import dk.via.sep3.repository.RegisterMemberJsonDTO;
+import dk.via.sep3.dto.LoginMemberJsonDTO;
+import dk.via.sep3.dto.MemberConstraints;
+import dk.via.sep3.dto.MemberResponseDTO;
+import dk.via.sep3.dto.RegisterMemberJsonDTO;
+import dk.via.sep3.mapper.MemberMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -35,18 +37,18 @@ public class MemberService {
     }
 
     public Optional<MemberResponseDTO> register(RegisterMemberJsonDTO dto) {
-        AddMemberRequest request = AddMemberRequest.newBuilder()
-                .setFirstName(dto.firstName().trim())
-                .setLastName(dto.lastName().trim())
-                .setMemberName(dto.username().trim())
-                .setPassword(passwordEncoder.encode(dto.password()))
-                .build();
+        AddMemberRequest request = MemberMapper.toAddMemberRequest(dto);
+        dk.via.sep3.generated.Member member = memberClient.addMember(request).get().getMember();
+        return Optional.of(MemberMapper.toMemberResponseDTO(member));
+    }
 
-        if (!memberClient.addMember(request)) {
+    public Optional<MemberResponseDTO> login(LoginMemberJsonDTO dto) {
+        LoginRequest request = MemberMapper.toLoginRequest(dto);
+        Optional<MemberResponse> response = memberClient.login(request);
+        if (response.isEmpty()) {
             return Optional.empty();
         }
-
-        return Optional.of(new MemberResponseDTO(
-                request.getFirstName(), request.getLastName(), request.getMemberName()));
+        dk.via.sep3.generated.Member member = response.get().getMember();
+        return Optional.of(MemberMapper.toMemberResponseDTO(member));
     }
 }

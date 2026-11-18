@@ -13,10 +13,10 @@ service ItemListingService {
   rpc GetItemThumbnails(ListItemThumbnailRequest) returns (GetItemThumbnailsResponse);
 }
 service MemberService{
-  rpc AddMember (AddMemberRequest) returns (google.protobuf.Empty);
+  rpc AddMember (AddMemberRequest) returns (MemberResponse);
   rpc GetMember (GetMemberRequest) returns (MemberResponse);
   rpc RemoveMember (RemoveMemberRequest) returns (google.protobuf.Empty);
-  rpc Login (LoginRequest) returns (google.protobuf.Empty);
+  rpc Login (LoginRequest) returns (MemberResponse);
   rpc CheckRegisterAvailability (CheckRegisterAvailabilityFieldRequest) returns (google.protobuf.Empty);
 }
 service ConversationService{
@@ -61,7 +61,7 @@ message ItemSummary {
   string itemName = 2;
   string description = 3;
   int32 price = 4;
-  Date date = 5;
+  int32 ownerId = 5;
 }
 //-----------Section entities-----------
 message Image {
@@ -81,11 +81,14 @@ message ItemListing {
   repeated Image images = 6;
   repeated Category categories = 7;
   Date date = 8;
+  int32 ownerId = 9;
 }
 message Member {
   int32 id = 1;
   string memberName = 2;
   string memberEmail = 3;
+  string firstName = 4;
+  string lastName = 5;
 }
 message Message {
   int32 id = 1;
@@ -109,6 +112,7 @@ message AddItemListingRequest {
   int32 price = 4;
   repeated Category categories = 5;
   repeated Image images = 6;
+  int32 ownerId= 7;
 }
 message AddImageRequest{
   int32 item_id= 1;
@@ -154,7 +158,7 @@ message ListConversationsRequest {
   string page_token = 3;
 }
 
- //All rounder update request for items, if the update only contains specific fields use narrowed requests instead
+//All rounder update request for items, if the update only contains specific fields use narrowed requests instead
 message UpdateItemListingRequest{
   int32  item_id = 1;
   string itemName = 2;
@@ -195,7 +199,7 @@ message RemoveConversationRequest{
 }
 message LoginRequest{
   string memberName = 1;
-  string password = 3;
+  string password = 2;
 }
 message ItemListingResponse {
   ItemListing itemlisting = 1;
