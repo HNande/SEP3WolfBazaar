@@ -1,4 +1,4 @@
-package dk.via.sep3.repository;
+package dk.via.sep3.dto;
 
 public record ItemSummaryResponseDTO(
     int id,

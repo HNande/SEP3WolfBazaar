@@ -4,7 +4,7 @@ import com.google.protobuf.Empty;
 import dk.via.sep3.generated.*;
 import dk.via.sep3.exception.InvalidRequestException;
 import dk.via.sep3.exception.UpstreamException;
-import dk.via.sep3.repository.ItemListingJsonDTO;
+import dk.via.sep3.dto.ItemListingJsonDTO;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import org.junit.jupiter.api.BeforeEach;

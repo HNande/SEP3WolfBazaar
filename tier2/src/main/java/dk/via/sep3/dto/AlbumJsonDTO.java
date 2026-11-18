@@ -1,4 +1,4 @@
-package dk.via.sep3.repository;
+package dk.via.sep3.dto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;

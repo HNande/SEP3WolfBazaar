@@ -1,9 +1,8 @@
 package dk.via.sep3.controller;
 
 import dk.via.sep3.exception.ApiExceptionHandler.ErrorResponse;
-import dk.via.sep3.repository.LoginMemberJsonDTO;
-import dk.via.sep3.repository.LoginResponseDTO;
-import dk.via.sep3.repository.MemberResponseDTO;
+import dk.via.sep3.dto.LoginMemberJsonDTO;
+import dk.via.sep3.dto.MemberResponseDTO;
 import dk.via.sep3.service.MemberService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -31,6 +30,6 @@ public class AuthController {
                     .body(new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Wrong user name or password"));
         }
 
-        return ResponseEntity.ok(new LoginResponseDTO(member.get().username()));
+        return ResponseEntity.ok(member);
     }
 }

@@ -2,8 +2,8 @@ package dk.via.sep3.controller;
 
 import dk.via.sep3.exception.ApiExceptionHandler;
 import dk.via.sep3.exception.UpstreamException;
-import dk.via.sep3.repository.MemberResponseDTO;
-import dk.via.sep3.repository.RegisterMemberJsonDTO;
+import dk.via.sep3.dto.MemberResponseDTO;
+import dk.via.sep3.dto.RegisterMemberJsonDTO;
 import dk.via.sep3.service.MemberService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -55,14 +55,14 @@ class MemberControllerTest {
         void one_validRequest_returns201() throws Exception {
             when(service.validatePassword(anyString())).thenReturn(Optional.empty());
             when(service.register(any(RegisterMemberJsonDTO.class)))
-                    .thenReturn(Optional.of(new MemberResponseDTO("Fenrir", "Wolf", "fenrir99")));
+                    .thenReturn(Optional.of(new MemberResponseDTO(1, "fenrir99", "fenrir@wolf.dk", "Fenrir", "Wolf")));
 
             mvc.perform(post("/api/member").contentType(MediaType.APPLICATION_JSON)
                             .content(body("Fenrir", "Wolf", "fenrir99", "fenrir@wolf.dk", "password123")))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.firstName").value("Fenrir"))
                     .andExpect(jsonPath("$.lastName").value("Wolf"))
-                    .andExpect(jsonPath("$.username").value("fenrir99"))
+                    .andExpect(jsonPath("$.memberName").value("fenrir99"))
                     .andExpect(jsonPath("$.password").doesNotExist());
         }
 

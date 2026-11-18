@@ -2,8 +2,8 @@ package dk.via.sep3.controller;
 
 import jakarta.validation.Valid;
 import dk.via.sep3.exception.ApiExceptionHandler.ErrorResponse;
-import dk.via.sep3.repository.MemberResponseDTO;
-import dk.via.sep3.repository.RegisterMemberJsonDTO;
+import dk.via.sep3.dto.MemberResponseDTO;
+import dk.via.sep3.dto.RegisterMemberJsonDTO;
 import dk.via.sep3.service.MemberService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

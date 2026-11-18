@@ -1,4 +1,4 @@
-package dk.via.sep3.repository;
+package dk.via.sep3.dto;
 
 public final class MemberConstraints {
     public static final int NAME_MAX = 50;

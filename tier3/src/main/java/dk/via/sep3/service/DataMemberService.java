@@ -17,16 +17,15 @@ public class DataMemberService {
     }
 
     @Transactional
-    public boolean addMember(String firstName, String lastName, String username, String password, String email)
+    public Optional<Member> addMember(String firstName, String lastName, String username, String password, String email)
     {
-        if(memberRepository.existsByUsername(username))
-        {
-            return false;
+        if(memberRepository.existsByUsername(username)) {
+            return Optional.empty();
         }
 
-        Member newMember = new Member(firstName, lastName, username, password, email);
+        Member newMember = new Member(firstName,lastName,username,password,email);
         memberRepository.save(newMember);
-        return true;
+        return Optional.of(newMember);
     }
 
     public Optional<Member> login(String username, String password) {

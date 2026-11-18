@@ -1,6 +1,7 @@
-package dk.via.sep3.repository;
+package dk.via.sep3.mapper;
 
 import com.google.protobuf.ByteString;
+import dk.via.sep3.dto.*;
 import dk.via.sep3.generated.*;
 
 import java.util.*;
@@ -28,7 +29,6 @@ public final class ItemListingMapper {
     for (int i = 0; i < dto.imageList().size(); i++) {
     builder.addImages(toImage(dto.imageList().get(i)));
     }
-
 
     return builder.build();
   }

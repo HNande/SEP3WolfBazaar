@@ -2,11 +2,11 @@ package dk.via.sep3.service;
 
 import dk.via.sep3.client.ItemListingGrpcClient;
 import dk.via.sep3.exception.InvalidRequestException;
-import dk.via.sep3.repository.ItemListingJsonDTO;
-import dk.via.sep3.repository.ItemListingMapper;
-import dk.via.sep3.repository.ItemListingResponseDTO;
-import dk.via.sep3.repository.ItemSummaryResponseDTO;
-import dk.via.sep3.repository.ThumbnailResponseDTO;
+import dk.via.sep3.dto.ItemListingJsonDTO;
+import dk.via.sep3.mapper.ItemListingMapper;
+import dk.via.sep3.dto.ItemListingResponseDTO;
+import dk.via.sep3.dto.ItemSummaryResponseDTO;
+import dk.via.sep3.dto.ThumbnailResponseDTO;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

@@ -6,9 +6,9 @@ import dk.via.sep3.generated.AddMemberRequest;
 import dk.via.sep3.generated.LoginRequest;
 import dk.via.sep3.generated.Member;
 import dk.via.sep3.generated.MemberResponse;
-import dk.via.sep3.repository.LoginMemberJsonDTO;
-import dk.via.sep3.repository.MemberResponseDTO;
-import dk.via.sep3.repository.RegisterMemberJsonDTO;
+import dk.via.sep3.dto.LoginMemberJsonDTO;
+import dk.via.sep3.dto.MemberResponseDTO;
+import dk.via.sep3.dto.RegisterMemberJsonDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -97,18 +97,28 @@ class MemberServiceTest {
         @Test
         @DisplayName("returns the new member with trimmed fields")
         void one_validDto_returnsMemberWithTrimmedFields() {
-            when(client.addMember(any(AddMemberRequest.class))).thenReturn(true);
+            Member protoMember = Member.newBuilder()
+                    .setId(1)
+                    .setMemberName("fenrir99")
+                    .setMemberEmail("fenrir@wolf.dk")
+                    .setFirstName("Fenrir")
+                    .setLastName("Wolf")
+                    .build();
+            when(client.addMember(any(AddMemberRequest.class)))
+                    .thenReturn(Optional.of(MemberResponse.newBuilder().setMember(protoMember).build()));
 
             Optional<MemberResponseDTO> result = service.register(dto);
 
             assertTrue(result.isPresent());
-            assertEquals(new MemberResponseDTO("Fenrir", "Wolf", "fenrir99"), result.get());
+            assertEquals(new MemberResponseDTO(1, "fenrir99", "fenrir@wolf.dk", "Fenrir", "Wolf"), result.get());
         }
 
         @Test
-        @DisplayName("sends trimmed fields and a hashed password to tier 3")
-        void one_validDto_sendsTrimmedFieldsAndHashedPassword() {
-            when(client.addMember(any(AddMemberRequest.class))).thenReturn(true);
+        @DisplayName("sends trimmed fields and a plain password to tier 3")
+        void one_validDto_sendsTrimmedFieldsAndPlainPassword() {
+            Member protoMember = Member.newBuilder().build();
+            when(client.addMember(any(AddMemberRequest.class)))
+                    .thenReturn(Optional.of(MemberResponse.newBuilder().setMember(protoMember).build()));
 
             service.register(dto);
 
@@ -119,16 +129,15 @@ class MemberServiceTest {
             assertEquals("Fenrir", sent.getFirstName());
             assertEquals("Wolf", sent.getLastName());
             assertEquals("fenrir99", sent.getMemberName());
-            assertNotEquals("password123", sent.getPassword());
-            assertTrue(encoder.matches("password123", sent.getPassword()));
+            assertEquals("password123", sent.getPassword());
         }
 
         @Test
-        @DisplayName("returns empty when the username is already taken")
-        void boundary_usernameTaken_returnsEmpty() {
-            when(client.addMember(any(AddMemberRequest.class))).thenReturn(false);
+        @DisplayName("throws NoSuchElementException when the username is already taken")
+        void boundary_usernameTaken_throws() {
+            when(client.addMember(any(AddMemberRequest.class))).thenReturn(Optional.empty());
 
-            assertTrue(service.register(dto).isEmpty());
+            assertThrows(Exception.class, () -> service.register(dto));
         }
 
         @Test
@@ -156,6 +165,7 @@ class MemberServiceTest {
         @DisplayName("returns the member and sends the trimmed username with the plain password")
         void one_validCredentials_returnsMember() {
             Member protoMember = Member.newBuilder()
+                    .setId(1)
                     .setFirstName("Fenrir")
                     .setLastName("Wolf")
                     .setMemberName("fenrir99")
@@ -166,7 +176,7 @@ class MemberServiceTest {
             Optional<MemberResponseDTO> result = service.login(dto);
 
             assertTrue(result.isPresent());
-            assertEquals(new MemberResponseDTO("Fenrir", "Wolf", "fenrir99"), result.get());
+            assertEquals(new MemberResponseDTO(1, "fenrir99", "", "Fenrir", "Wolf"), result.get());
             ArgumentCaptor<LoginRequest> captor = ArgumentCaptor.forClass(LoginRequest.class);
             verify(client).login(captor.capture());
             assertEquals("fenrir99", captor.getValue().getMemberName());

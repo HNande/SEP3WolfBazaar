@@ -24,24 +24,35 @@ public class GrpcMemberServer extends MemberServiceGrpc.MemberServiceImplBase {
         this.dataMemberService = dataMemberService;
     }
 
-    @Override
-    public void addMember(AddMemberRequest request, StreamObserver<Empty> responseObserver) {
+    public void addMember(AddMemberRequest request, StreamObserver<MemberResponse> responseObserver) {
         try {
-            boolean created = dataMemberService.addMember(
+
+            Optional<dk.via.sep3.entities.Member> createdMember = dataMemberService.addMember(
                     request.getFirstName(),
                     request.getLastName(),
                     request.getMemberName(),
                     request.getPassword(),
                     request.getMemberEmail()
             );
-            if (created) {
-                responseObserver.onNext(Empty.getDefaultInstance());
-                responseObserver.onCompleted();
-                LOG.info("Successfully added Member: {}", request.getMemberName());
-            } else {
+
+            if (createdMember.isEmpty()) {
                 responseObserver.onError(Status.ALREADY_EXISTS.withDescription("Username is already taken").asRuntimeException());
                 LOG.warn("Registration failed: Username is already taken");
+                return;
             }
+
+            LOG.info("Successfully added Member: {}", request.getMemberName());
+            dk.via.sep3.entities.Member member = createdMember.get();
+            dk.via.sep3.generated.Member protoMember = dk.via.sep3.generated.Member.newBuilder()
+                .setFirstName(member.getFirstName())
+                .setLastName(member.getLastName())
+                .setMemberName(member.getUsername())
+                .setId(member.getMemberId())
+                .setMemberEmail(member.getEmail())
+                .build();
+            MemberResponse response = MemberResponse.newBuilder().setMember(protoMember).build();
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
 
         } catch(Exception e)
             {
@@ -63,10 +74,12 @@ public class GrpcMemberServer extends MemberServiceGrpc.MemberServiceImplBase {
 
             dk.via.sep3.entities.Member member = memberOpt.get();
             dk.via.sep3.generated.Member protoMember = dk.via.sep3.generated.Member.newBuilder()
-                    .setFirstName(member.getFirstName())
-                    .setLastName(member.getLastName())
-                    .setMemberName(member.getUsername())
-                    .build();
+                .setFirstName(member.getFirstName())
+                .setLastName(member.getLastName())
+                .setMemberName(member.getUsername())
+                .setId(member.getMemberId())
+                .setMemberEmail(member.getEmail())
+                .build();
 
             MemberResponse response = MemberResponse.newBuilder().setMember(protoMember).build();
             responseObserver.onNext(response);

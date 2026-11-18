@@ -1,7 +1,8 @@
 package dk.via.sep3.client;
 
-import com.google.protobuf.Empty;
 import dk.via.sep3.generated.AddMemberRequest;
+import dk.via.sep3.generated.Member;
+import dk.via.sep3.generated.MemberResponse;
 import dk.via.sep3.generated.MemberServiceGrpc;
 import dk.via.sep3.exception.InvalidRequestException;
 import dk.via.sep3.exception.UpstreamException;
@@ -11,6 +12,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -48,27 +51,39 @@ class MemberGrpcClientTest {
         @DisplayName("adds member with minimal request")
         void zero_minimalRequest_succeeds() {
             AddMemberRequest minimal = AddMemberRequest.newBuilder().build();
+            Member member = Member.newBuilder().setId(1).build();
+            MemberResponse response = MemberResponse.newBuilder().setMember(member).build();
             when(stub.withDeadlineAfter(anyLong(), any()))
                     .thenReturn(stub);
             when(stub.addMember(minimal))
-                    .thenReturn(Empty.getDefaultInstance());
+                    .thenReturn(response);
 
-            boolean result = client.addMember(minimal);
+            Optional<MemberResponse> result = client.addMember(minimal);
 
-            assertTrue(result);
+            assertTrue(result.isPresent());
+            assertEquals(1, result.get().getMember().getId());
         }
 
         @Test
         @DisplayName("adds a single valid member")
         void one_validRequest_returnsTrue() {
+            Member member = Member.newBuilder()
+                    .setId(1)
+                    .setMemberName("alice")
+                    .setMemberEmail("alice@example.com")
+                    .setFirstName("Alice")
+                    .setLastName("Smith")
+                    .build();
+            MemberResponse response = MemberResponse.newBuilder().setMember(member).build();
             when(stub.withDeadlineAfter(anyLong(), any()))
                     .thenReturn(stub);
             when(stub.addMember(validRequest))
-                    .thenReturn(Empty.getDefaultInstance());
+                    .thenReturn(response);
 
-            boolean result = client.addMember(validRequest);
+            Optional<MemberResponse> result = client.addMember(validRequest);
 
-            assertTrue(result);
+            assertTrue(result.isPresent());
+            assertEquals(1, result.get().getMember().getId());
         }
 
         @Test
@@ -77,10 +92,12 @@ class MemberGrpcClientTest {
             when(stub.withDeadlineAfter(anyLong(), any()))
                     .thenReturn(stub);
             when(stub.addMember(any(AddMemberRequest.class)))
-                    .thenReturn(Empty.getDefaultInstance());
+                    .thenReturn(MemberResponse.newBuilder()
+                            .setMember(Member.newBuilder().setId(1).build())
+                            .build());
 
-            boolean r1 = client.addMember(validRequest);
-            boolean r2 = client.addMember(
+            Optional<MemberResponse> r1 = client.addMember(validRequest);
+            Optional<MemberResponse> r2 = client.addMember(
                     AddMemberRequest.newBuilder()
                             .setMemberName("bob")
                             .setMemberEmail("bob@example.com")
@@ -89,7 +106,7 @@ class MemberGrpcClientTest {
                             .setLastName("Jones")
                             .build()
             );
-            boolean r3 = client.addMember(
+            Optional<MemberResponse> r3 = client.addMember(
                     AddMemberRequest.newBuilder()
                             .setMemberName("carol")
                             .setMemberEmail("carol@example.com")
@@ -99,22 +116,22 @@ class MemberGrpcClientTest {
                             .build()
             );
 
-            assertTrue(r1);
-            assertTrue(r2);
-            assertTrue(r3);
+            assertTrue(r1.isPresent());
+            assertTrue(r2.isPresent());
+            assertTrue(r3.isPresent());
         }
 
         @Test
-        @DisplayName("returns false when member already exists")
-        void boundary_alreadyExists_returnsFalse() {
+        @DisplayName("returns empty when member already exists")
+        void boundary_alreadyExists_returnsEmpty() {
             when(stub.withDeadlineAfter(anyLong(), any()))
                     .thenReturn(stub);
             when(stub.addMember(validRequest))
                     .thenThrow(new StatusRuntimeException(Status.ALREADY_EXISTS));
 
-            boolean result = client.addMember(validRequest);
+            Optional<MemberResponse> result = client.addMember(validRequest);
 
-            assertFalse(result);
+            assertTrue(result.isEmpty());
         }
 
         @Test

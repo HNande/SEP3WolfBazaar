@@ -13,7 +13,7 @@ service ItemListingService {
   rpc GetItemThumbnails(ListItemThumbnailRequest) returns (GetItemThumbnailsResponse);
 }
 service MemberService{
-  rpc AddMember (AddMemberRequest) returns (google.protobuf.Empty);
+  rpc AddMember (AddMemberRequest) returns (MemberResponse);
   rpc GetMember (GetMemberRequest) returns (MemberResponse);
   rpc RemoveMember (RemoveMemberRequest) returns (google.protobuf.Empty);
   rpc Login (LoginRequest) returns (MemberResponse);
