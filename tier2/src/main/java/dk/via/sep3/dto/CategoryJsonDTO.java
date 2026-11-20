@@ -1,0 +1,14 @@
+package dk.via.sep3.dto;
+
+public enum CategoryJsonDTO {
+    CLOTHING,
+    FOOTWEAR,
+    ELECTRONICS,
+    MAKEUP,
+    JEWELRY,
+    HOUSEHOLD_GOODS,
+    PRIVATE_SERVICES,
+    CURIOSITIES,
+    PET_SUPPLIES,
+    GARDENING_OUTDOOR_GOODS
+}
