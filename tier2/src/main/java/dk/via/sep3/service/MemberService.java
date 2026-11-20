@@ -1,12 +1,13 @@
 package dk.via.sep3.service;
 
-import dk.via.sep3.generated.*;
-import dk.via.sep3.client.MemberGrpcClient;
 import dk.via.sep3.dto.LoginMemberJsonDTO;
 import dk.via.sep3.dto.MemberConstraints;
 import dk.via.sep3.dto.MemberResponseDTO;
 import dk.via.sep3.dto.RegisterMemberJsonDTO;
-import dk.via.sep3.mapper.MemberMapper;
+import dk.via.sep3.client.MemberGrpcClient;
+import dk.via.sep3.generated.AddMemberRequest;
+import dk.via.sep3.generated.LoginRequest;
+import dk.via.sep3.generated.Member;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -37,18 +38,33 @@ public class MemberService {
     }
 
     public Optional<MemberResponseDTO> register(RegisterMemberJsonDTO dto) {
-        AddMemberRequest request = MemberMapper.toAddMemberRequest(dto);
-        dk.via.sep3.generated.Member member = memberClient.addMember(request).get().getMember();
-        return Optional.of(MemberMapper.toMemberResponseDTO(member));
+        AddMemberRequest request = AddMemberRequest.newBuilder()
+                .setFirstName(dto.firstName().trim())
+                .setLastName(dto.lastName().trim())
+                .setMemberName(dto.username().trim())
+                .setPassword(passwordEncoder.encode(dto.password()))
+                .build();
+
+        return memberClient.addMember(request)
+                .map(response -> toDto(response.getMember(), request.getFirstName(), request.getLastName()));
     }
 
     public Optional<MemberResponseDTO> login(LoginMemberJsonDTO dto) {
-        LoginRequest request = MemberMapper.toLoginRequest(dto);
-        Optional<MemberResponse> response = memberClient.login(request);
-        if (response.isEmpty()) {
-            return Optional.empty();
-        }
-        dk.via.sep3.generated.Member member = response.get().getMember();
-        return Optional.of(MemberMapper.toMemberResponseDTO(member));
+        LoginRequest request = LoginRequest.newBuilder()
+                .setMemberName(dto.username().trim())
+                .setPassword(dto.password())
+                .build();
+
+        return memberClient.login(request)
+                .map(response -> toDto(response.getMember(), "", ""));
+    }
+
+    private static MemberResponseDTO toDto(Member member, String firstName, String lastName) {
+        return new MemberResponseDTO(
+                member.getId(),
+                member.getMemberName(),
+                member.getMemberEmail(),
+                firstName,
+                lastName);
     }
 }

@@ -30,6 +30,6 @@ public class AuthController {
                     .body(new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Wrong user name or password"));
         }
 
-        return ResponseEntity.ok(member);
+        return ResponseEntity.ok(member.get());
     }
 }

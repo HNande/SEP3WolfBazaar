@@ -1,7 +1,9 @@
 package dk.via.sep3.client;
 
-import com.google.protobuf.Empty;
-import dk.via.sep3.generated.*;
+import dk.via.sep3.generated.AddMemberRequest;
+import dk.via.sep3.generated.LoginRequest;
+import dk.via.sep3.generated.MemberResponse;
+import dk.via.sep3.generated.MemberServiceGrpc;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import dk.via.sep3.exception.InvalidRequestException;
@@ -26,9 +28,9 @@ public class MemberGrpcClient {
     }
     public Optional<MemberResponse> addMember(AddMemberRequest request) {
         try {
-            MemberResponse response = stub.withDeadlineAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS).addMember(request);
+            MemberResponse response = stub.withDeadlineAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    .addMember(request);
             return Optional.of(response);
-
 
         } catch (StatusRuntimeException e) {
             if (e.getStatus().getCode() == Status.Code.ALREADY_EXISTS) {
