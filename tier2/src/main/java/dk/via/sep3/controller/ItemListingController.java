@@ -1,10 +1,7 @@
 package dk.via.sep3.controller;
 
+import dk.via.sep3.dto.*;
 import jakarta.validation.Valid;
-import dk.via.sep3.dto.ItemListingJsonDTO;
-import dk.via.sep3.dto.ItemListingResponseDTO;
-import dk.via.sep3.dto.ItemSummaryResponseDTO;
-import dk.via.sep3.dto.ThumbnailResponseDTO;
 import dk.via.sep3.service.ItemListingService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -22,10 +19,15 @@ public class ItemListingController {
   }
 
   @GetMapping("")
-  public List<ItemSummaryResponseDTO> getItemSummaries() {
-    return itemListingService.getItemSummaries();
+  public List<ItemSummaryResponseDTO> getItemSummaries(
+          @RequestParam(required = false) String title,
+          @RequestParam(required = false) List<CategoryJsonDTO> categories,
+          @RequestParam(defaultValue = "false") boolean orderByPrice,
+          @RequestParam(defaultValue = "false") boolean orderByDate,
+          @RequestParam(defaultValue = "1") int counter) {
+    return itemListingService.getItemSummaries(
+            new ItemSearchCriteriaDTO(title, categories, orderByPrice, orderByDate, counter));
   }
-
   @GetMapping("/thumbnails")
   public List<ThumbnailResponseDTO> getThumbnails(@RequestParam("ids") List<Integer> ids) {
     return itemListingService.getThumbnails(ids);
