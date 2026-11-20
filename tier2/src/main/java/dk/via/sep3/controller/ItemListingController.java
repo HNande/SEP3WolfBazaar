@@ -1,6 +1,7 @@
 package dk.via.sep3.controller;
 
 import dk.via.sep3.dto.*;
+import dk.via.sep3.generated.Category;
 import jakarta.validation.Valid;
 import dk.via.sep3.service.ItemListingService;
 import org.springframework.http.HttpStatus;
@@ -21,9 +22,9 @@ public class ItemListingController {
   @GetMapping("")
   public List<ItemSummaryResponseDTO> getItemSummaries(
           @RequestParam(required = false) String title,
-          @RequestParam(required = false) List<CategoryJsonDTO> categories,
-          @RequestParam(defaultValue = "false") boolean orderByPrice,
-          @RequestParam(defaultValue = "false") boolean orderByDate,
+          @RequestParam(required = false) List<Category> categories,
+          @RequestParam(defaultValue = "0") int orderByPrice,
+          @RequestParam(defaultValue = "0") int orderByDate,
           @RequestParam(defaultValue = "1") int counter) {
     return itemListingService.getItemSummaries(
             new ItemSearchCriteriaDTO(title, categories, orderByPrice, orderByDate, counter));
