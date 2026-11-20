@@ -1,9 +1,12 @@
 package dk.via.sep3.service;
 
 import dk.via.sep3.client.ItemListingGrpcClient;
-import dk.via.sep3.dto.*;
 import dk.via.sep3.exception.InvalidRequestException;
+import dk.via.sep3.dto.ItemListingJsonDTO;
 import dk.via.sep3.mapper.ItemListingMapper;
+import dk.via.sep3.dto.ItemListingResponseDTO;
+import dk.via.sep3.dto.ItemSummaryResponseDTO;
+import dk.via.sep3.dto.ThumbnailResponseDTO;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,7 +16,6 @@ import java.util.NoSuchElementException;
 public class ItemListingService {
 
   public static final int MAX_THUMBNAIL_IDS = 50;
-  public static final int MAX_SEARCH_TITLE_LENGTH = 100;
 
   private final ItemListingGrpcClient client;
 
@@ -44,17 +46,8 @@ public class ItemListingService {
             .orElseThrow(() -> new NoSuchElementException("Item " + id + " not found"));
   }
 
-  public List<ItemSummaryResponseDTO> getItemSummaries(ItemSearchCriteriaDTO criteria) {
-    if (criteria.counter() < 1) {
-      throw new InvalidRequestException("Counter must be at least 1");
-    }
-    if (criteria.title().length() > MAX_SEARCH_TITLE_LENGTH) {
-      throw new InvalidRequestException(
-              "Title must be at most " + MAX_SEARCH_TITLE_LENGTH + " characters");
-    }
-
-    // getItemsSummaries is supposed to be written by Nandi (replaces getAllItemSummaries)
-    return client.getItemsSummaries(criteria).stream()
+  public List<ItemSummaryResponseDTO> getItemSummaries() {
+    return client.getAllItemSummaries().stream()
             .map(ItemListingMapper::toSummaryResponse)
             .toList();
   }
