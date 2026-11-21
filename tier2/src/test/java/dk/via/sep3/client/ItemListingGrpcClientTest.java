@@ -12,6 +12,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import dk.via.sep3.dto.ItemSearchCriteriaDTO;
 import java.util.Collections;
 import java.util.List;
 
@@ -239,12 +240,12 @@ class ItemListingGrpcClientTest {
     }
 
     @Nested
-    @DisplayName("getItems")
-    class GetItemsTests {
+    @DisplayName("getItemsSummaries")
+    class GetItemsSummariesTests {
 
         @Test
-        @DisplayName("uses default page size when zero is passed")
-        void zero_pageSizeZero_usesDefault() {
+        @DisplayName("returns empty list when no items exist")
+        void zero_noItems_returnsEmptyList() {
             ListItemSummariesResponse response = ListItemSummariesResponse.newBuilder().build();
 
             when(stub.withDeadlineAfter(anyLong(), any()))
@@ -252,15 +253,16 @@ class ItemListingGrpcClientTest {
             when(stub.getListItemSummaries(any(ListItemListingSummaryRequest.class)))
                     .thenReturn(response);
 
-            var result = client.getItems(0, null);
+            ItemSearchCriteriaDTO criteria = new ItemSearchCriteriaDTO("", Collections.emptyList(), 0, 0, 1);
+            var result = client.getItemsSummaries(criteria);
 
             assertNotNull(result);
-            verify(stub).getListItemSummaries(argThat(req -> req.getPageSize() > 0));
+            assertTrue(result.isEmpty());
         }
 
         @Test
-        @DisplayName("returns a page with one item")
-        void one_singleItem_returnsPage() {
+        @DisplayName("returns a list with one item")
+        void one_singleItem_returnsOne() {
             ListItemSummariesResponse response = ListItemSummariesResponse.newBuilder()
                     .addItems(ItemSummary.newBuilder().setId(1).setItemName("Laptop").setPrice(500).build())
                     .build();
@@ -270,21 +272,21 @@ class ItemListingGrpcClientTest {
             when(stub.getListItemSummaries(any(ListItemListingSummaryRequest.class)))
                     .thenReturn(response);
 
-            var result = client.getItems(10, null);
+            ItemSearchCriteriaDTO criteria = new ItemSearchCriteriaDTO("", Collections.emptyList(), 0, 0, 1);
+            var result = client.getItemsSummaries(criteria);
 
             assertNotNull(result);
-            assertEquals(1, result.items().size());
-            assertEquals("Laptop", result.items().get(0).getItemName());
+            assertEquals(1, result.size());
+            assertEquals("Laptop", result.get(0).getItemName());
         }
 
         @Test
-        @DisplayName("returns a page with multiple items")
+        @DisplayName("returns a list with multiple items")
         void many_multipleItems_returnsAll() {
             ListItemSummariesResponse response = ListItemSummariesResponse.newBuilder()
                     .addItems(ItemSummary.newBuilder().setId(1).setItemName("Laptop").build())
                     .addItems(ItemSummary.newBuilder().setId(2).setItemName("Phone").build())
                     .addItems(ItemSummary.newBuilder().setId(3).setItemName("Tablet").build())
-                    .setNextPageToken("next-page-token")
                     .build();
 
             when(stub.withDeadlineAfter(anyLong(), any()))
@@ -292,16 +294,16 @@ class ItemListingGrpcClientTest {
             when(stub.getListItemSummaries(any(ListItemListingSummaryRequest.class)))
                     .thenReturn(response);
 
-            var result = client.getItems(10, null);
+            ItemSearchCriteriaDTO criteria = new ItemSearchCriteriaDTO("", Collections.emptyList(), 0, 0, 1);
+            var result = client.getItemsSummaries(criteria);
 
             assertNotNull(result);
-            assertEquals(3, result.items().size());
-            assertEquals("next-page-token", result.nextPageToken());
+            assertEquals(3, result.size());
         }
 
         @Test
-        @DisplayName("treats null page token as empty string")
-        void boundary_nullPageToken_sentAsEmpty() {
+        @DisplayName("sends filter values from criteria")
+        void boundary_filterValues_sentInRequest() {
             ListItemSummariesResponse response = ListItemSummariesResponse.newBuilder().build();
 
             when(stub.withDeadlineAfter(anyLong(), any()))
@@ -309,9 +311,11 @@ class ItemListingGrpcClientTest {
             when(stub.getListItemSummaries(any(ListItemListingSummaryRequest.class)))
                     .thenReturn(response);
 
-            client.getItems(10, null);
+            ItemSearchCriteriaDTO criteria = new ItemSearchCriteriaDTO("", Collections.emptyList(), 2, 1, 1);
+            client.getItemsSummaries(criteria);
 
-            verify(stub).getListItemSummaries(argThat(req -> req.getPageToken().isEmpty()));
+            verify(stub).getListItemSummaries(argThat(req ->
+                    req.getFilter().getPrice() == 2 && req.getFilter().getDate() == 1));
         }
 
         @Test
@@ -322,37 +326,38 @@ class ItemListingGrpcClientTest {
             when(stub.getListItemSummaries(any(ListItemListingSummaryRequest.class)))
                     .thenThrow(new StatusRuntimeException(Status.INTERNAL));
 
+            ItemSearchCriteriaDTO criteria = new ItemSearchCriteriaDTO("", Collections.emptyList(), 0, 0, 1);
             assertThrows(
                     UpstreamException.class,
-                    () -> client.getItems(10, null)
+                    () -> client.getItemsSummaries(criteria)
             );
         }
     }
 
     @Nested
-    @DisplayName("getAllItemSummaries")
-    class GetAllItemSummariesTests {
+    @DisplayName("getItemsSummaries with ordering")
+    class GetItemsSummariesOrderingTests {
 
         @Test
-        @DisplayName("returns empty list when no items exist")
-        void zero_noItems_returnsEmptyList() {
-            ListItemSummariesResponse response = ListItemSummariesResponse.newBuilder()
-                    .build();
+        @DisplayName("sends no filtering when orderBy values are 0")
+        void zero_noFiltering_sendsZero() {
+            ListItemSummariesResponse response = ListItemSummariesResponse.newBuilder().build();
 
             when(stub.withDeadlineAfter(anyLong(), any()))
                     .thenReturn(stub);
             when(stub.getListItemSummaries(any(ListItemListingSummaryRequest.class)))
                     .thenReturn(response);
 
-            var result = client.getAllItemSummaries();
+            ItemSearchCriteriaDTO criteria = new ItemSearchCriteriaDTO("", Collections.emptyList(), 0, 0, 1);
+            client.getItemsSummaries(criteria);
 
-            assertNotNull(result);
-            assertTrue(result.isEmpty());
+            verify(stub).getListItemSummaries(argThat(req ->
+                    req.getFilter().getPrice() == 0 && req.getFilter().getDate() == 0));
         }
 
         @Test
-        @DisplayName("returns one item when only one exists")
-        void one_singleItem_returnsOne() {
+        @DisplayName("sends price ordering high to low when orderByPrice is 2")
+        void one_orderByPriceHighToLow_sendsTwo() {
             ListItemSummariesResponse response = ListItemSummariesResponse.newBuilder()
                     .addItems(ItemSummary.newBuilder().setId(1).setItemName("Laptop").build())
                     .build();
@@ -362,49 +367,47 @@ class ItemListingGrpcClientTest {
             when(stub.getListItemSummaries(any(ListItemListingSummaryRequest.class)))
                     .thenReturn(response);
 
-            var result = client.getAllItemSummaries();
+            ItemSearchCriteriaDTO criteria = new ItemSearchCriteriaDTO("", Collections.emptyList(), 2, 0, 1);
+            var result = client.getItemsSummaries(criteria);
 
             assertEquals(1, result.size());
-            assertEquals("Laptop", result.get(0).getItemName());
+            verify(stub).getListItemSummaries(argThat(req -> req.getFilter().getPrice() == 2));
         }
 
         @Test
-        @DisplayName("collects items across multiple pages")
-        void many_paginatedResults_collectedAll() {
-            ListItemSummariesResponse page1 = ListItemSummariesResponse.newBuilder()
+        @DisplayName("sends both ordering values correctly")
+        void many_bothOrderingValues_sentCorrectly() {
+            ListItemSummariesResponse response = ListItemSummariesResponse.newBuilder()
                     .addItems(ItemSummary.newBuilder().setId(1).setItemName("Laptop").build())
                     .addItems(ItemSummary.newBuilder().setId(2).setItemName("Phone").build())
-                    .setNextPageToken("page-2")
-                    .build();
-
-            ListItemSummariesResponse page2 = ListItemSummariesResponse.newBuilder()
                     .addItems(ItemSummary.newBuilder().setId(3).setItemName("Tablet").build())
                     .build();
 
             when(stub.withDeadlineAfter(anyLong(), any()))
                     .thenReturn(stub);
             when(stub.getListItemSummaries(any(ListItemListingSummaryRequest.class)))
-                    .thenReturn(page1, page2);
+                    .thenReturn(response);
 
-            var result = client.getAllItemSummaries();
+            ItemSearchCriteriaDTO criteria = new ItemSearchCriteriaDTO("", Collections.emptyList(), 1, 2, 1);
+            var result = client.getItemsSummaries(criteria);
 
             assertEquals(3, result.size());
-            assertEquals("Laptop", result.get(0).getItemName());
-            assertEquals("Phone", result.get(1).getItemName());
-            assertEquals("Tablet", result.get(2).getItemName());
+            verify(stub).getListItemSummaries(argThat(req ->
+                    req.getFilter().getPrice() == 1 && req.getFilter().getDate() == 2));
         }
 
         @Test
-        @DisplayName("throws UpstreamException if pagination fails")
-        void exceptional_errorDuringPagination_throwsUpstreamException() {
+        @DisplayName("throws UpstreamException on error")
+        void exceptional_error_throwsUpstreamException() {
             when(stub.withDeadlineAfter(anyLong(), any()))
                     .thenReturn(stub);
             when(stub.getListItemSummaries(any(ListItemListingSummaryRequest.class)))
                     .thenThrow(new StatusRuntimeException(Status.INTERNAL));
 
+            ItemSearchCriteriaDTO criteria = new ItemSearchCriteriaDTO("", Collections.emptyList(), 0, 0, 1);
             assertThrows(
                     UpstreamException.class,
-                    () -> client.getAllItemSummaries()
+                    () -> client.getItemsSummaries(criteria)
             );
         }
     }

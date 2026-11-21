@@ -1,5 +1,6 @@
 package dk.via.sep3.client;
 
+import dk.via.sep3.dto.ItemSearchCriteriaDTO;
 import dk.via.sep3.generated.*;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -7,7 +8,6 @@ import dk.via.sep3.exception.InvalidRequestException;
 import dk.via.sep3.exception.UpstreamException;
 import dk.via.sep3.dto.ItemListingJsonDTO;
 import dk.via.sep3.mapper.ItemListingMapper;
-import dk.via.sep3.dto.ItemPageResponseDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -62,42 +62,18 @@ public class ItemListingGrpcClient  {
         }
     }
 
-    public ItemPageResponseDTO getItems(int pageSize, String pageToken) {
+    public List<ItemSummary> getItemsSummaries(ItemSearchCriteriaDTO criteria) {
         try {
-            ListItemListingSummaryRequest request = ListItemListingSummaryRequest.newBuilder()
-                    .setPageSize(pageSize > 0 ? pageSize : DEFAULT_PAGE_SIZE)
-                    .setPageToken(pageToken == null ? "" : pageToken)
-                    .build();
-
-            ListItemSummariesResponse response = stub.withDeadlineAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS).getListItemSummaries(request);
-            return new ItemPageResponseDTO(response.getItemsList(), response.getNextPageToken());
-
-        } catch (StatusRuntimeException e) {
-            throw translate(e, "list items");
-        }
-    }
-
-    public List<ItemSummary> getAllItemSummaries() {
-        List<ItemSummary> all = new ArrayList<>();
-        String token = "";
-        try {
-            do {
-                ListItemListingSummaryRequest request = ListItemListingSummaryRequest.newBuilder()
-                        .setPageSize(SUMMARY_PAGE_SIZE)
-                        .setPageToken(token)
-                        .build();
-
-                ListItemSummariesResponse response = stub
-                        .withDeadlineAfter(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                        .getListItemSummaries(request);
-
-                all.addAll(response.getItemsList());
-                token = response.getNextPageToken();
-            } while (token != null && !token.isEmpty());
-        } catch (StatusRuntimeException e) {
+          ListItemListingSummaryRequest request = ListItemListingSummaryRequest.newBuilder()
+              .setTitle(criteria.title())
+              .addAllCategoryList(criteria.categories())
+              .setFilter(Filter.newBuilder().setDate(criteria.orderByDate()).setPrice(criteria.orderByPrice()).build())
+              .setCounter(criteria.counter()).build();
+          return stub.withDeadlineAfter(TIMEOUT_SECONDS,TimeUnit.SECONDS).getListItemSummaries(request).getItemsList();
+        }catch(StatusRuntimeException e){
             throw translate(e, "list item summaries");
         }
-        return all;
+
     }
 
     public List<ItemThumbnail> getThumbnails(List<Integer> ids) {
@@ -157,4 +133,6 @@ public class ItemListingGrpcClient  {
         LOG.error("Could not {}. gRPC status: {}", action, status);
         return new UpstreamException("Could not " + action + ": " + status.getCode(), e);
     }
+
+
 }
