@@ -122,12 +122,11 @@ message Conversation {
 
 message AddItemListingRequest {
   string itemName = 1;
-  string memberName = 2;
-  string description = 3;
-  int32 price = 4;
-  repeated Category categories = 5;
-  repeated Image images = 6;
-  int32 ownerId= 7;
+  string description = 2;
+  int32 price = 3;
+  repeated Category categories = 4;
+  repeated Image images = 5;
+  int32 ownerId= 6;
 }
 message AddImageRequest{
   int32 item_id= 1;
