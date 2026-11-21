@@ -5,26 +5,17 @@ import dk.via.sep3.dto.*;
 import dk.via.sep3.generated.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Strings.emptyToNull;
 
 public final class ItemListingMapper {
-  private static final Map<ImageFileTypeJsonDTO, ImageFileType> FILETYPE_TO_PROTO = new EnumMap<>(Map.of(
-      ImageFileTypeJsonDTO.PNG, ImageFileType.IMAGE_FILE_TYPE_PNG,
-      ImageFileTypeJsonDTO.JPEG, ImageFileType.IMAGE_FILE_TYPE_JPEG,
-      ImageFileTypeJsonDTO.JPG, ImageFileType.IMAGE_FILE_TYPE_JPG));
-
-  private static final Map<ImageFileType, ImageFileTypeJsonDTO> FILETYPE_FROM_PROTO =
-      FILETYPE_TO_PROTO.entrySet().stream()
-          .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
-
   public static AddItemListingRequest toRequest(ItemListingJsonDTO dto) {
     AddItemListingRequest.Builder builder = AddItemListingRequest.newBuilder()
         .setItemName(dto.itemName())
         .setDescription(dto.description())
         .setPrice(dto.price())
-        .setOwnerId(dto.ownerId());
+        .setOwnerId(dto.ownerId())
+        .addAllCategories(dto.categories());
 
     for (int i = 0; i < dto.imageList().size(); i++) {
     builder.addImages(toImage(dto.imageList().get(i)));
@@ -75,7 +66,7 @@ public final class ItemListingMapper {
   public static ThumbnailResponseDTO toThumbnailResponse(ItemThumbnail t) {
     return new ThumbnailResponseDTO(
         t.getItemId(),
-        FILETYPE_FROM_PROTO.get(t.getFiletype()),
+        t.getFiletype(),
         t.getWidth(),
         t.getHeight(),
         t.getData().toByteArray());
@@ -84,7 +75,7 @@ public final class ItemListingMapper {
   private static ImageResponseDTO toImageResponse(Image i) {
     return new ImageResponseDTO(
         i.getName(),
-        FILETYPE_FROM_PROTO.get(i.getFiletype()),
+        i.getFiletype(),
         i.getWidth(),
         i.getHeight(),
         i.getData().toByteArray());
@@ -93,7 +84,7 @@ public final class ItemListingMapper {
   private static Image toImage(ImageJsonDTO dto) {
     return Image.newBuilder()
         .setName(dto.name())
-        .setFiletype(FILETYPE_TO_PROTO.get(dto.filetype()))
+        .setFiletype(dto.filetype())
         .setWidth(dto.width())
         .setHeight(dto.height())
         .setData(ByteString.copyFrom(dto.data()))

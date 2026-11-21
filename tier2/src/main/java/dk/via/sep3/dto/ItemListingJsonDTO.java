@@ -1,5 +1,6 @@
 package dk.via.sep3.dto;
 
+import dk.via.sep3.generated.Category;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 
@@ -20,6 +21,8 @@ public record ItemListingJsonDTO(
     //apparently Dec rejects free items, so min is a better choice
     @NotNull @Min(value = 0, message = "Price cannot be negative")
     int price,
+
+    @Valid List<Category> categories,
 
     @Valid List<ImageJsonDTO> imageList,
 
