@@ -4,7 +4,7 @@ import dk.via.sep3.entities.Category;
 import dk.via.sep3.repository.CategoryRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import java.util.List;
+import java.util.Arrays;
 
 @Component
 public class CategorySeeder implements CommandLineRunner {
@@ -16,10 +16,11 @@ public class CategorySeeder implements CommandLineRunner {
 
   @Override
   public void run(String... args) {
-    for (String name : List.of("CLOTHING", "ACCESSORIES", "CURIOS")) {
-      if (repository.findByName(name).isEmpty()) {
-        repository.save(new Category(name));
-      }
-    }
+    Arrays.stream(dk.via.sep3.generated.Category.values())
+        .filter(c -> c != dk.via.sep3.generated.Category.UNSPECIFIED
+            && c != dk.via.sep3.generated.Category.UNRECOGNIZED)
+        .map(Enum::name)
+        .filter(name -> repository.findByName(name).isEmpty())
+        .forEach(name -> repository.save(new Category(name)));
   }
 }
