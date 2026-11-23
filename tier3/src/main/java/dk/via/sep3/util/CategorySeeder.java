@@ -16,7 +16,7 @@ public class CategorySeeder implements CommandLineRunner {
 
   @Override
   public void run(String... args) {
-    for (String name : List.of("CLOTHING", "ACCESSORIES", "CURIOS")) {
+    for (String name : ListingCategories.supportedNames()) {
       if (repository.findByName(name).isEmpty()) {
         repository.save(new Category(name));
       }

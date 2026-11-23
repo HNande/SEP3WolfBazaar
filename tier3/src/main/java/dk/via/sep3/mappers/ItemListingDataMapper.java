@@ -5,6 +5,7 @@ import dk.via.sep3.dto.*;
 import dk.via.sep3.entities.ItemListing;
 import dk.via.sep3.generated.*;
 import dk.via.sep3.entities.ItemPicture;
+import dk.via.sep3.util.ListingCategories;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,14 +23,16 @@ public class ItemListingDataMapper {
 
   public static ItemListingDataDTO toDomainDTO(AddItemListingRequest request) {
     List<ImageDataDTO> images = request.getImagesList().stream()
-        .map(ItemListingDataMapper::toImageDTO)
-        .toList();
+            .map(ItemListingDataMapper::toImageDTO)
+            .toList();
+
     return new ItemListingDataDTO(
-        request.getItemName(),
-        request.getDescription(),
-        request.getPrice(),
-        new AlbumDataDTO(request.getItemName() + " Album", images),
-            request.getOwnerId());
+            request.getItemName(),
+            request.getDescription(),
+            request.getPrice(),
+            new AlbumDataDTO(request.getItemName() + " Album", images),
+            request.getOwnerId(),
+            ListingCategories.names(request.getCategoriesList()));
   }
 
   public static ItemListingResponseDTO toResponseDTO(ItemListing itemListing) {
@@ -49,11 +52,13 @@ public class ItemListingDataMapper {
   }
 
   private static List<dk.via.sep3.generated.Category> toCategoryDTOs(
-      Set<dk.via.sep3.entities.Category> categories) {
+          Set<dk.via.sep3.entities.Category> categories) {
     return categories.stream()
-        .map(c -> toProtoCategory(c.getName()))
-        .filter(c -> c != dk.via.sep3.generated.Category.CATEGORY_UNSPECIFIED)
-        .toList();
+            .map(category -> ListingCategories.fromStoredName(category.getName()))
+            .filter(category -> category != dk.via.sep3.generated.Category.UNSPECIFIED)
+            .distinct()
+            .sorted()
+            .toList();
   }
 
   private static dk.via.sep3.generated.Category toProtoCategory(String name) {
@@ -61,7 +66,7 @@ public class ItemListingDataMapper {
       return dk.via.sep3.generated.Category.valueOf(
           "CATEGORY_" + name.trim().toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException e) {
-      return dk.via.sep3.generated.Category.CATEGORY_UNSPECIFIED;
+      return dk.via.sep3.generated.Category.UNSPECIFIED;
     }
   }
 

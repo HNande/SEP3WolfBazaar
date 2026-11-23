@@ -7,6 +7,7 @@ import dk.via.sep3.dto.ThumbnailDataDTO;
 import dk.via.sep3.generated.*;
 import dk.via.sep3.mappers.ItemListingDataMapper;
 import dk.via.sep3.service.DataItemListingService;
+import dk.via.sep3.util.ListingCategories;
 import io.grpc.Context;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -25,7 +26,7 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
 
     private static final Logger LOG = LoggerFactory.getLogger(GrpcItemListingServer.class);
     private static final int MAX_SEARCH_TITLE_LENGTH = 100;
-    private static final int SEARCH_PAGE_SIZE = 50;
+    private static final int SEARCH_PAGE_SIZE = 10;
     private final DataItemListingService service;
 
     public GrpcItemListingServer(DataItemListingService service) {
@@ -65,8 +66,9 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
     }
 
     @Override
-    public void getListItemSummaries(ListItemListingSummaryRequest request,
-                                     StreamObserver<ListItemSummariesResponse> responseObserver) {
+    public void getListItemSummaries(
+            ListItemListingSummaryRequest request,
+            StreamObserver<ListItemSummariesResponse> responseObserver) {
         Context context = Context.current();
         if (context.isCancelled()) {
             return;
@@ -82,25 +84,21 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
                 throw new IllegalArgumentException("Counter must be at least 1");
             }
 
-            List<String> categories = request.getCategoryListList().stream()
-                    .map(GrpcItemListingServer::searchCategoryName)
-                    .distinct()
-                    .toList();
+            List<String> categories =
+                    ListingCategories.searchNames(request.getCategoryListList());
             PageRequest page = PageRequest.of(
                     request.getCounter() - 1, SEARCH_PAGE_SIZE, searchSort(request.getFilter()));
-            Optional<List<ItemSummaryDataDTO>> items = service.searchItemSummaries(title, categories, page);
-            if (context.isCancelled()) {
-                return;
+            if (page.getOffset() > Integer.MAX_VALUE) {
+                throw new IllegalArgumentException("Counter is too large");
             }
-            if (items.isEmpty()) {
-                responseObserver.onError(Status.UNIMPLEMENTED
-                        .withDescription("Catalogue search query is not configured")
-                        .asRuntimeException());
+
+            List<ItemSummaryDataDTO> items = service.searchItemSummaries(title, categories, page);
+            if (context.isCancelled()) {
                 return;
             }
 
             responseObserver.onNext(ListItemSummariesResponse.newBuilder()
-                    .addAllItems(items.get().stream()
+                    .addAllItems(items.stream()
                             .map(ItemListingDataMapper::toProtoSummary)
                             .toList())
                     .build());
