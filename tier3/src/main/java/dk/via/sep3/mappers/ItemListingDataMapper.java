@@ -52,7 +52,7 @@ public class ItemListingDataMapper {
       Set<dk.via.sep3.entities.Category> categories) {
     return categories.stream()
         .map(c -> toProtoCategory(c.getName()))
-        .filter(c -> c != dk.via.sep3.generated.Category.CATEGORY_UNSPECIFIED)
+        .filter(c -> c != Category.UNSPECIFIED)
         .toList();
   }
 
@@ -61,7 +61,7 @@ public class ItemListingDataMapper {
       return dk.via.sep3.generated.Category.valueOf(
           "CATEGORY_" + name.trim().toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException e) {
-      return dk.via.sep3.generated.Category.CATEGORY_UNSPECIFIED;
+      return Category.UNSPECIFIED;
     }
   }
 
