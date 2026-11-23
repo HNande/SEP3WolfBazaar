@@ -17,10 +17,11 @@ public class ItemDto
     public string Description { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Price is required.")]
-    [Range(1, 1000000, ErrorMessage = "Price must be between 1 and 1,000,000.")]
+    [Range(0, 1000000, ErrorMessage = "Price must be between 0 and 1,000,000.")]
     public int? Price { get; set; }
 
-    public AlbumDto? Album { get; set; }
+    [JsonPropertyName("imageList")]
+    public List<PhotoDto> ImageList { get; set; } = new List<PhotoDto>();
 
     [JsonPropertyName("ownerId")]
     public int OwnerId { get; set; }

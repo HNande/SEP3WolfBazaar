@@ -80,7 +80,7 @@
                             <h3 class="h5 item-title mt-2">@item.Name</h3>
                             <p class="item-description">@item.Description</p>
                             <p class="mb-0 item-price">
-                                <strong>Price:</strong> $@item.Price.ToString("N0")
+                                <strong>Price:</strong> @(item.Price == 0 ? "Free" : "$" + item.Price.ToString("N0"))
                             </p>
 
                             @if (currentUserId.HasValue && item.OwnerId == currentUserId.Value)

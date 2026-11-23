@@ -105,7 +105,7 @@ public class LocalItemService : IItemService
 
     public async Task UpdateItemAsync(ItemDto itemDto, IEnumerable<IBrowserFile> newFiles)
     {
-        var existingPhotos = itemDto.Album?.Photos ?? new List<PhotoDto>();
+        var existingPhotos = itemDto.ImageList ?? new List<PhotoDto>();
         var addedPhotos = await ConvertFilesToPhotosAsync(newFiles);
 
         if (existingPhotos.Count + addedPhotos.Count > MaxPictures)
@@ -139,17 +139,14 @@ public class LocalItemService : IItemService
                 Description = item.Description,
                 Price = item.Price,
                 OwnerId = item.OwnerId,
-                Album = new AlbumDto
+                ImageList = item.Photos.Select(p => new PhotoDto
                 {
-                    Photos = item.Photos.Select(p => new PhotoDto
-                    {
-                        Name = p.Name,
-                        Width = p.Width,
-                        Height = p.Height,
-                        Filetype = p.Filetype,
-                        Data = p.Data
-                    }).ToList()
-                }
+                    Name = p.Name,
+                    Width = p.Width,
+                    Height = p.Height,
+                    Filetype = p.Filetype,
+                    Data = p.Data
+                }).ToList()
             });
         }
     }

@@ -129,7 +129,7 @@
         }
 
         var idClaim = user.FindFirst("Id")?.Value;
-        if (!int.TryParse(idClaim, out int ownerId) || ownerId <= 0)
+            if (!int.TryParse(idClaim, out int ownerId) || ownerId <= 0)
         {
             errorMessage = "User ID not found. Please log in again.";
             return;
