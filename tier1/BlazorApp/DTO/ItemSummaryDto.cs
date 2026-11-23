@@ -16,7 +16,7 @@ public class ItemSummaryDto
     [JsonPropertyName("ownerId")]
     public int OwnerId { get; set; }
     
-    [JsonPropertyName("categoryList")]
+    [JsonPropertyName("categories")]
     public List<Category>? Categories { get; set; } = new();
 
     [JsonIgnore]
