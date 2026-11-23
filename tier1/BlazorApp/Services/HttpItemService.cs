@@ -21,7 +21,7 @@ public class HttpItemService : IItemService
 
     public async Task CreateItemAsync(ItemDto itemDto, IEnumerable<IBrowserFile> files)
     {
-        itemDto.Album = await BuildAlbumAsync(itemDto.Name, files);
+        itemDto.ImageList = await BuildImageListAsync(files);
 
         var response = await _http.PostAsJsonAsync("api/item", itemDto);
         if (!response.IsSuccessStatusCode)
@@ -74,17 +74,14 @@ public class HttpItemService : IItemService
         return result;
     }
 
-    private async Task<AlbumDto> BuildAlbumAsync(string itemName, IEnumerable<IBrowserFile> files)
+    private async Task<List<PhotoDto>> BuildImageListAsync(IEnumerable<IBrowserFile> files)
     {
         var fileList = files?.ToList() ?? new List<IBrowserFile>();
 
         if (fileList.Count > MaxPictures)
             throw new ArgumentException($"You can upload a maximum of {MaxPictures} pictures.");
 
-        var album = new AlbumDto
-        {
-            Photos = new List<PhotoDto>()
-        };
+        var photos = new List<PhotoDto>();
 
         foreach (var file in fileList)
         {
@@ -105,7 +102,7 @@ public class HttpItemService : IItemService
                 throw new ArgumentException(
                     $"Picture {file.Name} resolution must be up to {MaxDimension}x{MaxDimension} pixels. Current: {image.Width}x{image.Height}");
 
-            album.Photos.Add(new PhotoDto
+            photos.Add(new PhotoDto
             {
                 Name = file.Name,
                 Width = image.Width,
@@ -115,7 +112,7 @@ public class HttpItemService : IItemService
             });
         }
 
-        return album;
+        return photos;
     }
 
     private static async Task<string> ReadErrorAsync(HttpResponseMessage response)
@@ -160,7 +157,7 @@ public class HttpItemService : IItemService
     
     public async Task UpdateItemAsync(ItemDto itemDto, IEnumerable<IBrowserFile> newFiles)
     {
-        var existingPhotos = itemDto.Album?.Photos ?? new List<PhotoDto>();
+        var existingPhotos = itemDto.ImageList ?? new List<PhotoDto>();
         var fileList = newFiles?.ToList() ?? new List<IBrowserFile>();
 
         if (existingPhotos.Count + fileList.Count > MaxPictures)
@@ -169,10 +166,9 @@ public class HttpItemService : IItemService
         if (existingPhotos.Count + fileList.Count == 0)
             throw new ArgumentException("Item must have at least one picture.");
 
-        var newAlbum = await BuildAlbumAsync(itemDto.Name, fileList);
-        existingPhotos.AddRange(newAlbum.Photos);
+        var newPhotos = await BuildImageListAsync(fileList);
 
-        itemDto.Album = new AlbumDto { Photos = existingPhotos };
+        itemDto.ImageList = existingPhotos.Concat(newPhotos).ToList();
 
         var response = await _http.PutAsJsonAsync($"api/item/{itemDto.Id}", itemDto);
         if (!response.IsSuccessStatusCode)

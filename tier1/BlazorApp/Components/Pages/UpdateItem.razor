@@ -141,7 +141,7 @@ else
                 return;
             }
 
-            existingPhotos = itemDto.Album?.Photos ?? new List<PhotoDto>();
+            existingPhotos = itemDto.ImageList.ToList();
         }
         catch (Exception ex)
         {
@@ -236,7 +236,7 @@ else
 
         try
         {
-            itemDto.Album = new AlbumDto { Photos = existingPhotos };
+            itemDto.ImageList = existingPhotos;
             await ItemService.UpdateItemAsync(itemDto, selectedFiles);
             Navigation.NavigateTo("/");
         }
