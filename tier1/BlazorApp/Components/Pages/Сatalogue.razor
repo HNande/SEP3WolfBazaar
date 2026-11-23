@@ -79,9 +79,22 @@
 
                             <h3 class="h5 item-title mt-2">@item.Name</h3>
                             <p class="item-description">@item.Description</p>
+                            
                             <p class="mb-0 item-price">
                                 <strong>Price:</strong> @(item.Price == 0 ? "Free" : "$" + item.Price.ToString("N0"))
                             </p>
+
+                            @if (item.Categories.Count > 0)
+                            {
+                                <div class="d-flex flex-wrap gap-1 mt-2">
+                                    @foreach (var category in item.Categories)
+                                    {
+                                        <span class="category-chip" style="padding: 0.15rem 0.6rem; font-size: 0.75rem;">
+                                            @FormatCategoryName(category)
+                                        </span>
+                                    }
+                                </div>
+                            }
 
                             @if (currentUserId.HasValue && item.OwnerId == currentUserId.Value)
                             {
@@ -304,4 +317,12 @@
         var newlyShown = displayedItems.Where(i => !shownBefore.Contains(i.Id)).ToList();
         await LoadThumbnailsAsync(newlyShown);
     }
+    
+    private static string FormatCategoryName(Category category) => category switch
+    {
+        Category.CategoryClothing => "Clothing",
+        Category.CategoryAccessories => "Accessories",
+        Category.CategoryCurios => "Curios",
+        _ => category.ToString()
+    };
 }

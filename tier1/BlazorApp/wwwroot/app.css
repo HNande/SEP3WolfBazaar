@@ -58,3 +58,146 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+.yellow-text{
+    --bs-text-opacity: 1;
+    color: rgb(197 190 103); !important;
+}
+
+.category-dropdown-trigger {
+    background-color: #081b24;
+    color: #e2eef3;
+    border: 1px solid #17485c;
+    border-radius: 10px;
+    padding: 0.6rem 0.9rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.category-dropdown-trigger:hover:not(:disabled),
+.category-dropdown-trigger:focus {
+    border-color: #fde047;
+    box-shadow: 0 0 0 0.2rem rgba(253, 224, 71, 0.2);
+    color: #e2eef3;
+}
+
+.category-dropdown-menu {
+    position: relative;
+    z-index: 1000;
+    background-color: #081b24;
+    border: 1px solid #17485c;
+    border-radius: 10px;
+    padding: 0.35rem;
+    margin-top: 0.35rem;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
+}
+
+.category-dropdown-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: #e2eef3;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.category-dropdown-item:hover {
+    background-color: #17485c;
+    color: #fef9c3;
+}
+
+.category-dropdown-plus {
+    color: #fde047;
+    font-weight: 700;
+    margin-right: 0.35rem;
+}
+
+.category-dropdown-footer {
+    border-top: 1px solid #17485c;
+    margin-top: 0.35rem;
+    padding-top: 0.4rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.category-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #081b24;
+    color: #e2eef3;
+    border: 1px solid #17485c;
+    border-radius: 999px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.good-form-control {
+    display: block;
+    width: 100%;
+    padding: 0.6rem 0.9rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #e2eef3;
+    background-color: #081b24;
+    background-clip: padding-box;
+    border: 1px solid #17485c;
+    border-radius: 10px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.good-form-control::placeholder {
+    color: #6f8c99;
+}
+
+.good-form-control:hover:not(:disabled),
+.good-form-control:focus {
+    background-color: #081b24;
+    color: #e2eef3;
+    border-color: #fde047;
+    box-shadow: 0 0 0 0.2rem rgba(253, 224, 71, 0.2);
+    outline: 0;
+}
+
+.good-form-control:disabled {
+    opacity: 0.6;
+}
+
+.good-form-control::file-selector-button {
+    margin: -0.6rem 0.9rem -0.6rem -0.9rem;
+    padding: 0.6rem 0.9rem;
+    color: #e2eef3;
+    background-color: #17485c;
+    border: 0;
+    border-right: 1px solid #17485c;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.good-form-control:hover::file-selector-button {
+    background-color: #1d5c76;
+    color: #fef9c3;
+}
+
+.good-form-control.invalid {
+    outline: 0;
+    border-color: #ff6b6b;
+}
+
+.good-form-control.valid.modified {
+    outline: 0;
+    border-color: #26b050;
+}
+
+.validation-message {
+    color: #ff8a8a;
+}

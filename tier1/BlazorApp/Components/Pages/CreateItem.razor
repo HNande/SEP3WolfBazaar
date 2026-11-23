@@ -1,6 +1,5 @@
 @page "/create_item"
 @rendermode InteractiveServer
-@using Microsoft.AspNetCore.Components.Authorization
 @inject IItemService ItemService
 @inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager Navigation
@@ -17,44 +16,106 @@
     <ValidationSummary />
 
     <div class="mb-3">
-        <label>Name (8 - 200 chars):</label>
-        <InputText class="form-control" @bind-Value="itemDto.Name" />
+        <label class="form-label">Name (8 - 200 chars):</label>
+        <InputText class="good-form-control" @bind-Value="itemDto.Name" />
         <ValidationMessage For="@(() => itemDto.Name)" />
     </div>
 
     <div class="mb-3">
-        <label>Description (20 - 500 chars):</label>
-        <InputTextArea class="form-control" @bind-Value="itemDto.Description" />
+        <label class="form-label">Description (20 - 500 chars):</label>
+        <InputTextArea class="good-form-control" rows="3" @bind-Value="itemDto.Description" />
         <ValidationMessage For="@(() => itemDto.Description)" />
     </div>
 
     <div class="mb-3">
-        <label>Price:</label>
-        <InputNumber class="form-control" @bind-Value="itemDto.Price" />
+        <label class="form-label">Price:</label>
+        <InputNumber class="good-form-control" @bind-Value="itemDto.Price" />
         <ValidationMessage For="@(() => itemDto.Price)" />
     </div>
 
     <div class="mb-3">
-        <label>Pictures (Max 4, PNG/JPEG, up to 2048x2048):</label>
-        <InputFile OnChange="LoadFiles" class="form-control" multiple accept=".png, .jpeg, .jpg" />
-        <small class="text-muted">Selected files: @selectedFiles.Count / 4</small>
-    </div>
+        <label class="form-label">Categories:</label>
 
-    <button type="submit" class="btn btn-success" disabled="@isSubmitting">
-        @if (isSubmitting)
+        <div class="position-relative">
+            <button type="button"
+                    class="form-select text-start category-dropdown-trigger"
+                    disabled="@(!AvailableCategories.Any())"
+                    @onclick="ToggleDropdown">
+                @(AvailableCategories.Any() ? "-- Select a category --" : "-- All categories selected --")
+            </button>
+
+            @if (isDropdownOpen && AvailableCategories.Any())
+            {
+                <div class="category-dropdown-menu">
+                    @foreach (var category in AvailableCategories)
+                    {
+                        var cat = category;
+                        <button type="button"
+                                class="category-dropdown-item"
+                                @onclick="@(() => SelectCategory(cat))">
+                            <span class="category-dropdown-plus">+</span>@FormatCategoryName(cat)
+                        </button>
+                    }
+
+                    <div class="category-dropdown-footer">
+                        <button type="button"
+                                class="auth-pill"
+                                style="padding: 0.25rem 0.95rem; font-size: 0.85rem;"
+                                @onclick="CloseDropdown">
+                            Done
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (itemDto.Categories.Count > 0)
         {
-            <span>Saving...</span>
+            <div class="d-flex flex-wrap gap-2 mt-2">
+                @foreach (var category in itemDto.Categories)
+                {
+                    <span class="category-chip">
+                        <span>@FormatCategoryName(category)</span>
+                        <button type="button"
+                                class="btn-close btn-close-white"
+                                style="font-size: 0.65rem;"
+                                aria-label="Remove @FormatCategoryName(category)"
+                                @onclick="@(() => RemoveCategory(category))"></button>
+                    </span>
+                }
+            </div>
         }
         else
         {
-            <span>Create Item</span>
+            <small class="yellow-text d-block mt-1">No categories selected yet.</small>
         }
-    </button>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Pictures (Max 4, PNG/JPEG, up to 2048x2048):</label>
+        <InputFile OnChange="LoadFiles" class="good-form-control form-control" multiple accept=".png, .jpeg, .jpg" />
+        <small class="yellow-text d-block mt-1">Selected files: @selectedFiles.Count / 4</small>
+    </div>
+
+    <div class="d-flex justify-content-between w-100">
+        <button type="submit" class="btn auth-pill" disabled="@isSubmitting">
+            @if (isSubmitting)
+            {
+                <span>Saving...</span>
+            }
+            else
+            {
+                <span>Create Item</span>
+            }
+        </button>
+        <a href="/" class="btn auth-pill">Cancel</a>
+    </div>
 </EditForm>
 
 @code {
     private ItemDto itemDto = new();
     private List<IBrowserFile> selectedFiles = new();
+    private bool isDropdownOpen;
     private string? errorMessage;
     private bool isSubmitting;
 
@@ -62,6 +123,49 @@
     private const long MaxFileSize = 1024 * 1024 * 10;
     private const int MaxWidth = 2048;
     private const int MaxHeight = 2048;
+
+    private IEnumerable<Category> AvailableCategories =>
+        Enum.GetValues<Category>()
+            .Where(c => c != Category.CategoryUnspecified && !itemDto.Categories.Contains(c));
+
+    private void ToggleDropdown()
+    {
+        if (AvailableCategories.Any())
+        {
+            isDropdownOpen = !isDropdownOpen;
+        }
+    }
+
+    private void CloseDropdown()
+    {
+        isDropdownOpen = false;
+    }
+
+    private void SelectCategory(Category category)
+    {
+        if (category != Category.CategoryUnspecified && !itemDto.Categories.Contains(category))
+        {
+            itemDto.Categories.Add(category);
+        }
+
+        if (!AvailableCategories.Any())
+        {
+            isDropdownOpen = false;
+        }
+    }
+
+    private void RemoveCategory(Category category)
+    {
+        itemDto.Categories.Remove(category);
+    }
+
+    private static string FormatCategoryName(Category category) => category switch
+    {
+        Category.CategoryClothing => "Clothing",
+        Category.CategoryAccessories => "Accessories",
+        Category.CategoryCurios => "Curios",
+        _ => category.ToString()
+    };
 
     private async Task LoadFiles(InputFileChangeEventArgs e)
     {
@@ -129,7 +233,7 @@
         }
 
         var idClaim = user.FindFirst("Id")?.Value;
-            if (!int.TryParse(idClaim, out int ownerId) || ownerId <= 0)
+        if (!int.TryParse(idClaim, out int ownerId) || ownerId <= 0)
         {
             errorMessage = "User ID not found. Please log in again.";
             return;

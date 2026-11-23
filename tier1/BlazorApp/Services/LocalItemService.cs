@@ -19,6 +19,7 @@ public class LocalItemService : IItemService
         public string Description { get; set; } = string.Empty;
         public int Price { get; set; }
         public int OwnerId { get; set; }
+        public List<Category> Categories { get; set; } = new();
         public List<PhotoDto> Photos { get; set; } = new();
     }
 
@@ -31,6 +32,7 @@ public class LocalItemService : IItemService
             Description = "Owned by test user (Id = 1). You can edit or delete this item.",
             Price = 500,
             OwnerId = 1,
+            Categories = new List<Category> { Category.CategoryCurios, Category.CategoryAccessories },
             Photos = new List<PhotoDto>()
         });
 
@@ -41,6 +43,7 @@ public class LocalItemService : IItemService
             Description = "Owned by user 8800. You should NOT see Delete or Update buttons here.",
             Price = 1200,
             OwnerId = 8800,
+            Categories = new List<Category> { Category.CategoryClothing },
             Photos = new List<PhotoDto>()
         });
         
@@ -51,6 +54,7 @@ public class LocalItemService : IItemService
             Description = "Owned by user 8800. You should NOT see Delete or Update buttons here.",
             Price = 1200,
             OwnerId = 8800,
+            Categories = new List<Category> { Category.CategoryAccessories },
             Photos = new List<PhotoDto>()
         });
         
@@ -61,6 +65,7 @@ public class LocalItemService : IItemService
             Description = "Owned by user 8800. You should NOT see Delete or Update buttons here.",
             Price = 1200,
             OwnerId = 8800,
+            Categories = new List<Category> { Category.CategoryCurios },
             Photos = new List<PhotoDto>()
         });
         
@@ -71,6 +76,7 @@ public class LocalItemService : IItemService
             Description = "Owned by user 8800. You should NOT see Delete or Update buttons here.",
             Price = 1200,
             OwnerId = 8800,
+            Categories = new List<Category> { Category.CategoryClothing, Category.CategoryCurios },
             Photos = new List<PhotoDto>()
         });
         
@@ -81,6 +87,7 @@ public class LocalItemService : IItemService
             Description = "Owned by user 8800. You should NOT see Delete or Update buttons here.",
             Price = 1200,
             OwnerId = 8800,
+            Categories = new List<Category> { Category.CategoryClothing, Category.CategoryAccessories, Category.CategoryCurios },
             Photos = new List<PhotoDto>()
         });
     }
@@ -98,6 +105,7 @@ public class LocalItemService : IItemService
                 Description = itemDto.Description,
                 Price = itemDto.Price ?? 0,
                 OwnerId = itemDto.OwnerId,
+                Categories = itemDto.Categories.ToList(),
                 Photos = photos
             });
         }
@@ -121,6 +129,7 @@ public class LocalItemService : IItemService
             item.Name = itemDto.Name;
             item.Description = itemDto.Description;
             item.Price = itemDto.Price ?? 0;
+            item.Categories = itemDto.Categories.ToList();
             item.Photos = combinedPhotos;
         }
     }
@@ -139,6 +148,7 @@ public class LocalItemService : IItemService
                 Description = item.Description,
                 Price = item.Price,
                 OwnerId = item.OwnerId,
+                Categories = item.Categories.ToList(),
                 ImageList = item.Photos.Select(p => new PhotoDto
                 {
                     Name = p.Name,
@@ -161,7 +171,8 @@ public class LocalItemService : IItemService
                 Name = i.Name,
                 Description = i.Description,
                 Price = i.Price,
-                OwnerId = i.OwnerId
+                OwnerId = i.OwnerId,
+                Categories = i.Categories.ToList()
             }).ToList();
 
             return Task.FromResult<IEnumerable<ItemSummaryDto>>(summaries);

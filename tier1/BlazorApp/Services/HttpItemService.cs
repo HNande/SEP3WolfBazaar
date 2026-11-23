@@ -162,6 +162,9 @@ public class HttpItemService : IItemService
 
         if (existingPhotos.Count + fileList.Count > MaxPictures)
             throw new ArgumentException($"You can have a maximum of {MaxPictures} pictures in total.");
+        
+        if (itemDto.Categories.Count == 0)
+            throw new ArgumentException("At least one category must be selected.");
 
         if (existingPhotos.Count + fileList.Count == 0)
             throw new ArgumentException("Item must have at least one picture.");
