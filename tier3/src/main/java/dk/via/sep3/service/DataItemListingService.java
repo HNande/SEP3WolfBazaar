@@ -2,10 +2,13 @@ package dk.via.sep3.service;
 
 import dk.via.sep3.dao.ItemListingDAO;
 import dk.via.sep3.dao.ItemSummaryDAO;
+import dk.via.sep3.dao.ItemSummarySearch;
 import dk.via.sep3.dto.ItemListingDataDTO;
 import dk.via.sep3.dto.ItemListingResponseDTO;
+import dk.via.sep3.dto.ItemSummaryDataDTO;
 import dk.via.sep3.dto.ThumbnailDataDTO;
 import dk.via.sep3.generated.UpdateItemListingRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,10 +21,13 @@ public class DataItemListingService {
 
     private final ItemListingDAO itemListingDAO;
     private final ItemSummaryDAO itemSummaryDAO;
+    private final Optional<ItemSummarySearch> itemSummarySearch;
 
-    public DataItemListingService(ItemListingDAO itemListingDAO, ItemSummaryDAO itemSummaryDAO) {
+    public DataItemListingService(ItemListingDAO itemListingDAO, ItemSummaryDAO itemSummaryDAO,
+                                  Optional<ItemSummarySearch> itemSummarySearch) {
         this.itemListingDAO = itemListingDAO;
         this.itemSummaryDAO = itemSummaryDAO;
+        this.itemSummarySearch = itemSummarySearch;
     }
 
     public ItemListingResponseDTO addItem(ItemListingDataDTO dto) {
@@ -46,6 +52,11 @@ public class DataItemListingService {
 
     public ItemSummaryDAO.ItemSummaryPage getItemSummaries(int pageSize, String pageToken) {
         return itemSummaryDAO.getItemSummaries(pageSize, pageToken);
+    }
+
+    public Optional<List<ItemSummaryDataDTO>> searchItemSummaries(
+            String title, List<String> categoryNames, Pageable page) {
+        return itemSummarySearch.map(search -> search.search(title, categoryNames, page));
     }
 
     public List<ThumbnailDataDTO> getFirstThumbnails(List<Integer> ids) {

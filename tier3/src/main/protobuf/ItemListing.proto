@@ -11,6 +11,7 @@ service ItemListingService {
   rpc RemoveItemListing (RemoveItemListingRequest) returns (google.protobuf.Empty);
   rpc GetListItemSummaries(ListItemListingSummaryRequest) returns (ListItemSummariesResponse);
   rpc GetItemThumbnails(ListItemThumbnailRequest) returns (GetItemThumbnailsResponse);
+  rpc GetItemListingsByMember(ListItemListingforMemberRequest) returns (ListItemListingforMemberResponse);
 }
 service MemberService{
   rpc AddMember (AddMemberRequest) returns (MemberResponse);
@@ -34,10 +35,18 @@ enum ImageFileType{
   IMAGE_FILE_TYPE_JPEG = 3; //JPEG and JPG are interchangable filetypes, if preferable collapse into a single type, if not then store both
 }
 enum Category {
-  CATEGORY_UNSPECIFIED = 0;
-  CATEGORY_CLOTHING    = 1;
-  CATEGORY_ACCESSORIES = 2;
-  CATEGORY_CURIOS      = 3;
+  UNSPECIFIED = 0;
+  CLOTHING = 1;
+  FOOTWEAR = 2;
+  ELECTRONICS = 3;
+  MAKEUP = 4;
+  JEWELRY = 5;
+  HOUSEHOLD_GOODS = 6;
+  PRIVATE_SERVICES = 7;
+  CURIOSITIES = 8;
+  PET_SUPPLIES = 9;
+  GARDENING = 10;
+  OUTDOOR_GOODS = 11;
 }
 enum MemberField{
   MEMBER_FIELD_UNSPECIFIED = 0;
@@ -62,6 +71,11 @@ message ItemSummary {
   string description = 3;
   int32 price = 4;
   int32 ownerId = 5;
+}
+
+message Filter{
+  int32 price = 1;
+  int32 date = 2;
 }
 //-----------Section entities-----------
 message Image {
@@ -107,12 +121,11 @@ message Conversation {
 
 message AddItemListingRequest {
   string itemName = 1;
-  string memberName = 2;
-  string description = 3;
-  int32 price = 4;
-  repeated Category categories = 5;
-  repeated Image images = 6;
-  int32 ownerId= 7;
+  string description = 2;
+  int32 price = 3;
+  repeated Category categories = 4;
+  repeated Image images = 5;
+  int32 ownerId= 6;
 }
 message AddImageRequest{
   int32 item_id= 1;
@@ -140,12 +153,17 @@ message GetMemberRequest {
 message GetItemListingRequest {
   int32 id = 1;
 }
+message ListItemListingforMemberRequest{
+  int32 member_id = 1;
+}
 message ListItemThumbnailRequest {
   repeated int32 item_ids = 1;
 }
 message ListItemListingSummaryRequest  {
-  int32 page_size = 1;
-  string page_token = 2;
+  string title = 1;
+  repeated Category categoryList = 2;
+  Filter filter = 3;
+  int32 counter = 4;
 }
 message ListMessagesRequest {
   int32 conversation_id = 1;
@@ -206,7 +224,9 @@ message ItemListingResponse {
 }
 message ListItemSummariesResponse {
   repeated ItemSummary items = 1;
-  string next_page_token = 2;
+}
+message ListItemListingforMemberResponse {
+  repeated ItemListing items = 1;
 }
 message GetItemThumbnailsResponse {
   repeated ItemThumbnail thumbnails = 1;

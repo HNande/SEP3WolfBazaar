@@ -1,18 +1,22 @@
 package dk.via.sep3.server;
 
 import com.google.protobuf.Empty;
-import dk.via.sep3.generated.*;
-import io.grpc.Status;
-import io.grpc.stub.StreamObserver;
-import dk.via.sep3.dao.ItemSummaryDAO;
 import dk.via.sep3.dto.ItemListingResponseDTO;
+import dk.via.sep3.dto.ItemSummaryDataDTO;
 import dk.via.sep3.dto.ThumbnailDataDTO;
+import dk.via.sep3.generated.*;
 import dk.via.sep3.mappers.ItemListingDataMapper;
 import dk.via.sep3.service.DataItemListingService;
+import io.grpc.Context;
+import io.grpc.Status;
+import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.grpc.server.service.GrpcService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,6 +24,8 @@ import java.util.Optional;
 public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingServiceImplBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(GrpcItemListingServer.class);
+    private static final int MAX_SEARCH_TITLE_LENGTH = 100;
+    private static final int SEARCH_PAGE_SIZE = 50;
     private final DataItemListingService service;
 
     public GrpcItemListingServer(DataItemListingService service) {
@@ -60,21 +66,77 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
 
     @Override
     public void getListItemSummaries(ListItemListingSummaryRequest request,
-        StreamObserver<ListItemSummariesResponse> responseObserver) {
+                                     StreamObserver<ListItemSummariesResponse> responseObserver) {
+        Context context = Context.current();
+        if (context.isCancelled()) {
+            return;
+        }
+
         try {
-            ItemSummaryDAO.ItemSummaryPage page =
-                service.getItemSummaries(request.getPageSize(), request.getPageToken());
+            String title = request.getTitle().strip();
+            if (title.length() > MAX_SEARCH_TITLE_LENGTH) {
+                throw new IllegalArgumentException(
+                        "Title must be at most " + MAX_SEARCH_TITLE_LENGTH + " characters");
+            }
+            if (request.getCounter() < 1) {
+                throw new IllegalArgumentException("Counter must be at least 1");
+            }
+
+            List<String> categories = request.getCategoryListList().stream()
+                    .map(GrpcItemListingServer::searchCategoryName)
+                    .distinct()
+                    .toList();
+            PageRequest page = PageRequest.of(
+                    request.getCounter() - 1, SEARCH_PAGE_SIZE, searchSort(request.getFilter()));
+            Optional<List<ItemSummaryDataDTO>> items = service.searchItemSummaries(title, categories, page);
+            if (context.isCancelled()) {
+                return;
+            }
+            if (items.isEmpty()) {
+                responseObserver.onError(Status.UNIMPLEMENTED
+                        .withDescription("Catalogue search query is not configured")
+                        .asRuntimeException());
+                return;
+            }
 
             responseObserver.onNext(ListItemSummariesResponse.newBuilder()
-                .addAllItems(page.items().stream()
-                    .map(ItemListingDataMapper::toProtoSummary)
-                    .toList())
-                .setNextPageToken(page.nextPageToken())
-                .build());
+                    .addAllItems(items.get().stream()
+                            .map(ItemListingDataMapper::toProtoSummary)
+                            .toList())
+                    .build());
             responseObserver.onCompleted();
         } catch (Exception e) {
-            fail(responseObserver, e, "list item summaries");
+            if (!context.isCancelled()) {
+                fail(responseObserver, e, "list item summaries");
+            }
         }
+    }
+
+    private static String searchCategoryName(Category category)
+    {
+        if(category == Category.UNSPECIFIED || category == category.UNRECOGNIZED)
+        {
+            throw new IllegalArgumentException("Unknown search category");
+        }
+        return category.name();
+    }
+
+    private static Sort searchSort(Filter filter) {
+        List<Sort.Order> orders = new ArrayList<>();
+        switch (filter.getPrice()) {
+            case 0 -> { }
+            case 1 -> orders.add(Sort.Order.asc("price"));
+            case 2 -> orders.add(Sort.Order.desc("price"));
+            default -> throw new IllegalArgumentException("Price order must be 0, 1, or 2");
+        }
+        switch (filter.getDate()) {
+            case 0 -> { }
+            case 1 -> orders.add(Sort.Order.desc("listDate"));
+            case 2 -> orders.add(Sort.Order.asc("listDate"));
+            default -> throw new IllegalArgumentException("Date order must be 0, 1, or 2");
+        }
+        orders.add(Sort.Order.asc("itemId"));
+        return Sort.by(orders);
     }
 
     @Override
