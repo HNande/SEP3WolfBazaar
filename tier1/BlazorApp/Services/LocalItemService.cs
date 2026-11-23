@@ -32,7 +32,7 @@ public class LocalItemService : IItemService
             Description = "Owned by test user (Id = 1). You can edit or delete this item.",
             Price = 500,
             OwnerId = 1,
-            Categories = new List<Category> { Category.CategoryCurios, Category.CategoryAccessories },
+            Categories = new List<Category> { Category.CategoryJewelry, Category.CategoryCuriosities },
             Photos = new List<PhotoDto>()
         });
 
@@ -54,7 +54,7 @@ public class LocalItemService : IItemService
             Description = "Owned by user 8800. You should NOT see Delete or Update buttons here.",
             Price = 1200,
             OwnerId = 8800,
-            Categories = new List<Category> { Category.CategoryAccessories },
+            Categories = new List<Category> { Category.CategoryCuriosities },
             Photos = new List<PhotoDto>()
         });
         
@@ -65,7 +65,7 @@ public class LocalItemService : IItemService
             Description = "Owned by user 8800. You should NOT see Delete or Update buttons here.",
             Price = 1200,
             OwnerId = 8800,
-            Categories = new List<Category> { Category.CategoryCurios },
+            Categories = new List<Category> { Category.CategoryPrivateServices },
             Photos = new List<PhotoDto>()
         });
         
@@ -76,7 +76,7 @@ public class LocalItemService : IItemService
             Description = "Owned by user 8800. You should NOT see Delete or Update buttons here.",
             Price = 1200,
             OwnerId = 8800,
-            Categories = new List<Category> { Category.CategoryClothing, Category.CategoryCurios },
+            Categories = new List<Category> { Category.CategoryClothing, Category.CategoryMakeup },
             Photos = new List<PhotoDto>()
         });
         
@@ -87,7 +87,7 @@ public class LocalItemService : IItemService
             Description = "Owned by user 8800. You should NOT see Delete or Update buttons here.",
             Price = 1200,
             OwnerId = 8800,
-            Categories = new List<Category> { Category.CategoryClothing, Category.CategoryAccessories, Category.CategoryCurios },
+            Categories = new List<Category> { Category.CategoryClothing, Category.CategoryElectronics, Category.CategoryFootwear },
             Photos = new List<PhotoDto>()
         });
     }

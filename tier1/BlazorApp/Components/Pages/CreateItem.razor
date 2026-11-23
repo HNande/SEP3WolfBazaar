@@ -162,8 +162,15 @@
     private static string FormatCategoryName(Category category) => category switch
     {
         Category.CategoryClothing => "Clothing",
-        Category.CategoryAccessories => "Accessories",
-        Category.CategoryCurios => "Curios",
+        Category.CategoryFootwear => "Footwear",
+        Category.CategoryElectronics => "Electronics",
+        Category.CategoryMakeup => "Makeup",
+        Category.CategoryJewelry => "Jewelry",
+        Category.CategoryHouseholdGoods => "Household Goods",
+        Category.CategoryCuriosities => "Curiosities",
+        Category.CategoryPetSupplies => "Pet Supplies",
+        Category.CategoryGardening => "Gardening",
+        Category.CategoryOutdoorGoods => "Outdoor Goods",
         _ => category.ToString()
     };
 
