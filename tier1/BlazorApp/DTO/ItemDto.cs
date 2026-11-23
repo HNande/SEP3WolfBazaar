@@ -21,7 +21,7 @@ public class ItemDto
     public int? Price { get; set; }
 
     [JsonPropertyName("categories")]
-    public List<Category> Categories { get; set; } = new List<Category>(); 
+    public List<Category>? Categories { get; set; } = new List<Category>(); 
 
     [JsonPropertyName("imageList")]
     public List<PhotoDto> ImageList { get; set; } = new List<PhotoDto>();

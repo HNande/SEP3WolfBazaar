@@ -10,7 +10,7 @@ public record ItemListingResponseDTO(
     String description,
     int price,
     List<ImageResponseDTO> imageList,
-    List<Category> categoryList,
+    List<Category> categories,
     int year,
     int month,
     int day,
