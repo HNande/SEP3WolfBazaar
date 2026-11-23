@@ -107,7 +107,7 @@ public class HttpItemService : IItemService
                 Name = file.Name,
                 Width = image.Width,
                 Height = image.Height,
-                Filetype = contentType == "image/png" ? "PNG" : "JPG",
+                Filetype = contentType == "image/png" ? "IMAGE_FILE_TYPE_PNG" : "IMAGE_FILE_TYPE_JPG",
                 Data = fileBytes
             });
         }
@@ -135,14 +135,14 @@ public class HttpItemService : IItemService
         if (string.IsNullOrWhiteSpace(filetype))
             return null;
 
-        var value = filetype.Trim().TrimStart('.').ToLowerInvariant();
+        if (filetype.Contains("PNG", StringComparison.OrdinalIgnoreCase))
+            return "image/png";
 
-        return value switch
-        {
-            "png" => "image/png",
-            "jpg" or "jpeg" => "image/jpeg",
-            _ => null
-        };
+        if (filetype.Contains("JPG", StringComparison.OrdinalIgnoreCase) ||
+            filetype.Contains("JPEG", StringComparison.OrdinalIgnoreCase))
+            return "image/jpeg";
+
+        return null;
     }
     
     public async Task DeleteItemAsync(int id)

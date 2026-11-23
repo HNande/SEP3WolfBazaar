@@ -22,8 +22,10 @@ public record ItemListingJsonDTO(
     @NotNull @Min(value = 0, message = "Price cannot be negative")
     int price,
 
+    @NotNull(message = "Categories are required")
     @Valid List<Category> categories,
 
+    @NotEmpty(message = "At least one image is required")
     @Valid List<ImageJsonDTO> imageList,
 
     @NotNull
