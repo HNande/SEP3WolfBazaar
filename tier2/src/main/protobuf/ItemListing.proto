@@ -29,10 +29,9 @@ service ConversationService{
 }
 //------Section global variables-------
 enum ImageFileType{
-  IMAGE_FILE_TYPE_UNSPECIFIED = 0;
-  IMAGE_FILE_TYPE_PNG = 1;
-  IMAGE_FILE_TYPE_JPG = 2;
-  IMAGE_FILE_TYPE_JPEG = 3; //JPEG and JPG are interchangable filetypes, if preferable collapse into a single type, if not then store both
+  PNG = 0;
+  JPG = 1;
+  JPEG = 2; //JPEG and JPG are interchangable filetypes, if preferable collapse into a single type, if not then store both
 }
 enum Category {
   UNSPECIFIED = 0;
