@@ -2,5 +2,5 @@
 
 public record ThumbnailDto(
     int ItemId,
-    string Filetype,
+    PhotoFormat Filetype,
     string Data);

@@ -256,9 +256,20 @@ public class LocalItemService : IItemService
                 var first = item.Photos.FirstOrDefault();
                 if (first?.Data is { Length: > 0 })
                 {
-                    var mime = first.Filetype.Equals("PNG", StringComparison.OrdinalIgnoreCase)
-                        ? "image/png"
-                        : "image/jpeg";
+                    string? mime = first.Filetype switch
+                    {
+                        PhotoFormat.JPEG => "image/jpeg",
+                        PhotoFormat.JPG => "image/jpg",
+                        PhotoFormat.PNG => "image/png",
+                        _ => null
+                    };
+                    
+                    if (mime is null)
+                    {
+                        Console.WriteLine($"Invalid photo format {first.Filetype} for item {item.Id}. Skipping thumbnail.");
+                        continue;
+                    }
+                    
                     result[item.Id] = $"data:{mime};base64,{Convert.ToBase64String(first.Data)}";
                 }
             }
@@ -290,6 +301,20 @@ public class LocalItemService : IItemService
             using var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
             var bytes = ms.ToArray();
+            var contentType = file.ContentType?.ToLowerInvariant();
+            if (contentType is not ("image/jpeg" or "image/jpg" or "image/png"))
+            {
+                Console.WriteLine($"Invalid photo format for file '{file.Name}' (ContentType: '{file.ContentType}').");
+                throw new ArgumentException($"Invalid format for '{file.Name}'. Please upload a photo in PNG, JPG, or JPEG format.");
+            }
+
+            var photoFormat = contentType switch
+            {
+                "image/jpeg" => PhotoFormat.JPEG,
+                "image/jpg" => PhotoFormat.JPG,
+                "image/png" => PhotoFormat.PNG,
+                _ => PhotoFormat.UNRECOGNIZED
+            };
 
             ms.Position = 0;
             using var image = Image.Load(ms);
@@ -299,7 +324,7 @@ public class LocalItemService : IItemService
                 Name = file.Name,
                 Width = image.Width,
                 Height = image.Height,
-                Filetype = file.ContentType.Contains("png", StringComparison.OrdinalIgnoreCase) ? "PNG" : "JPG",
+                Filetype = photoFormat,
                 Data = bytes
             });
         }

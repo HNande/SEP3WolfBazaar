@@ -65,9 +65,11 @@ public class HttpItemService : IItemService
         foreach (var t in thumbnails)
         {
             var mime = ToMimeType(t.Filetype);
-            if (mime is null || string.IsNullOrEmpty(t.Data))
+            if (mime is null)
+            {
+                Console.WriteLine($"Unsupported thumbnail format {t.Filetype} for item {t.ItemId}. Skipping thumbnail.");
                 continue;
-
+            }
             result[t.ItemId] = $"data:{mime};base64,{t.Data}";
         }
 
@@ -85,9 +87,16 @@ public class HttpItemService : IItemService
 
         foreach (var file in fileList)
         {
-            var contentType = file.ContentType?.ToLowerInvariant();
+            var contentType = file.ContentType.ToLowerInvariant();
             if (contentType is not ("image/png" or "image/jpeg" or "image/jpg"))
-                throw new ArgumentException($"File {file.Name} must be in PNG or JPEG format.");
+                throw new ArgumentException($"File {file.Name} must be in PNG/JPG/JPEG format.");
+            var phototContentType = contentType switch
+            {
+                "image/jpeg" => PhotoFormat.JPEG, 
+                "image/jpg" => PhotoFormat.JPG,
+                "image/png" => PhotoFormat.PNG,
+                _ => PhotoFormat.UNRECOGNIZED
+            };
 
             using var stream = file.OpenReadStream(maxAllowedSize: MaxFileBytes);
             using var memoryStream = new MemoryStream();
@@ -107,7 +116,7 @@ public class HttpItemService : IItemService
                 Name = file.Name,
                 Width = image.Width,
                 Height = image.Height,
-                Filetype = contentType == "image/png" ? "PNG" : "JPG",
+                Filetype = phototContentType,
                 Data = fileBytes
             });
         }
@@ -130,19 +139,17 @@ public class HttpItemService : IItemService
         return $"Request failed (HTTP {(int)response.StatusCode} {response.ReasonPhrase})";
     }
 
-    private static string? ToMimeType(string? filetype)
+    private static string? ToMimeType(PhotoFormat filetype)
     {
-        if (string.IsNullOrWhiteSpace(filetype))
-            return null;
+        string? mime = filetype switch
+        {
+            PhotoFormat.JPEG => "image/jpeg", 
+            PhotoFormat.JPG => "image/jpg",
+            PhotoFormat.PNG => "image/png",
+            _ => null
+        };
 
-        if (filetype.Contains("PNG", StringComparison.OrdinalIgnoreCase))
-            return "image/png";
-
-        if (filetype.Contains("JPG", StringComparison.OrdinalIgnoreCase) ||
-            filetype.Contains("JPEG", StringComparison.OrdinalIgnoreCase))
-            return "image/jpeg";
-
-        return null;
+        return mime;
     }
     
     public async Task DeleteItemAsync(int id)

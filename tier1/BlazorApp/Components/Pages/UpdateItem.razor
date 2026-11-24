@@ -1,7 +1,6 @@
 ﻿@page "/update_item/{ItemId:int}"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using Microsoft.AspNetCore.Components.Authorization
-@using BlazorApp.DTO
 @inject IItemService ItemService
 @inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager Navigation
@@ -297,10 +296,11 @@ else
 
         foreach (var file in files)
         {
-            if (!file.ContentType.Equals("image/jpeg", StringComparison.OrdinalIgnoreCase) &&
-                !file.ContentType.Equals("image/png", StringComparison.OrdinalIgnoreCase))
+            var contentType = file.ContentType?.ToLowerInvariant();
+            if (contentType is not ("image/jpeg" or "image/png" or "image/jpg"))
             {
-                errorMessage = $"File '{file.Name}' has an invalid format. Only JPG/PNG allowed.";
+                Console.WriteLine($"Invalid photo format for file '{file.Name}' (ContentType: '{file.ContentType}').");
+                errorMessage = $"Invalid format for '{file.Name}'. Please upload a photo in PNG, JPG, or JPEG format.";
                 selectedFiles.Clear();
                 return;
             }
@@ -328,6 +328,13 @@ else
 
     private async Task HandleValidSubmit()
     {
+        if (existingPhotos.Any(p => p.Filetype is not (PhotoFormat.PNG or PhotoFormat.JPG or PhotoFormat.JPEG)))
+        {
+            Console.WriteLine($"Item {itemDto.Id} has an existing photo with invalid format.");
+            errorMessage = "One or more existing pictures have an invalid format. Remove them and upload a PNG, JPG, or JPEG photo.";
+            return;
+        }
+        
         int totalPhotos = existingPhotos.Count + selectedFiles.Count;
         if (totalPhotos == 0)
         {
@@ -360,11 +367,26 @@ else
         }
     }
 
-    private static string ToDataUrl(PhotoDto photo)
+    private static string? ToDataUrl(PhotoDto photo)
     {
-        var mime = photo.Filetype.Contains("PNG", StringComparison.OrdinalIgnoreCase)
-            ? "image/png"
-            : "image/jpeg";
+        if (photo.Data is not { Length: > 0 })
+            return null;
+
+        string? mime = photo.Filetype switch
+        {
+            PhotoFormat.JPEG => "image/jpeg",
+            PhotoFormat.JPG => "image/jpg",
+            PhotoFormat.PNG => "image/png",
+            _ => null
+        };
+
+        if (mime is null)
+        {
+            Console.WriteLine($"Unsupported photo format {photo.Filetype} for photo '{photo.Name}'.");
+            return null;
+        }
+
         return $"data:{mime};base64,{Convert.ToBase64String(photo.Data)}";
     }
+
 }

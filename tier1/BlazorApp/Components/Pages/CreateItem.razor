@@ -193,10 +193,11 @@
 
         foreach (var file in files)
         {
-            if (!file.ContentType.Equals("image/jpeg", StringComparison.OrdinalIgnoreCase) &&
-                !file.ContentType.Equals("image/png", StringComparison.OrdinalIgnoreCase))
+            var contentType = file.ContentType?.ToLowerInvariant();
+            if (contentType is not ("image/jpeg" or "image/png" or "image/jpg"))
             {
-                errorMessage = $"File '{file.Name}' has an invalid format. Only JPG/PNG allowed.";
+                Console.WriteLine($"Invalid photo format for file '{file.Name}' (ContentType: '{file.ContentType}').");
+                errorMessage = $"Invalid format for '{file.Name}'. Please upload a photo in PNG, JPG, or JPEG format.";
                 selectedFiles.Clear();
                 return;
             }
