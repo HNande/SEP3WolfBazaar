@@ -227,24 +227,6 @@ public class LocalItemService : IItemService
         }
     }
 
-    public Task<IEnumerable<ItemSummaryDto>> GetItemSummariesAsync()
-    {
-        lock (_lock)
-        {
-            var summaries = _items.Select(i => new ItemSummaryDto
-            {
-                Id = i.Id,
-                Name = i.Name,
-                Description = i.Description,
-                Price = i.Price,
-                OwnerId = i.OwnerId,
-                Categories = i.Categories.ToList()
-            }).ToList();
-
-            return Task.FromResult<IEnumerable<ItemSummaryDto>>(summaries);
-        }
-    }
-
     public Task<Dictionary<int, string>> GetThumbnailsAsync(IEnumerable<int> ids)
     {
         var idSet = ids.ToHashSet();

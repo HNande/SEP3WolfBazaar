@@ -41,16 +41,6 @@ public class HttpItemService : IItemService
                ?? throw new InvalidOperationException("Failed to deserialize item response.");
     }
 
-    public async Task<IEnumerable<ItemSummaryDto>> GetItemSummariesAsync()
-    {
-        var response = await _http.GetAsync("api/item");
-        if (!response.IsSuccessStatusCode)
-            throw new Exception(await ReadErrorAsync(response));
-
-        return await response.Content.ReadFromJsonAsync<IEnumerable<ItemSummaryDto>>()
-               ?? Enumerable.Empty<ItemSummaryDto>();
-    }
-
     public async Task<Dictionary<int, string>> GetThumbnailsAsync(IEnumerable<int> ids)
     {
         var idList = ids.Distinct().ToList();

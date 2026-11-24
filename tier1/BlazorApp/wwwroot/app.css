@@ -124,6 +124,15 @@ h1:focus {
     justify-content: flex-end;
 }
 
+.form-select.category-dropdown-trigger:disabled {
+    background-color: #081b24;
+    color: #e2eef3;
+    border-color: #17485c;
+    box-shadow: none;
+    opacity: 1;
+    cursor: default;
+}
+
 .category-chip {
     display: inline-flex;
     align-items: center;

@@ -1,5 +1,8 @@
-﻿namespace BlazorApp.DTO;
+﻿using System.Text.Json.Serialization;
 
+namespace BlazorApp.DTO;
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum PhotoFormat
 {
     UNRECOGNIZED = -1,

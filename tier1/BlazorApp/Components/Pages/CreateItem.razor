@@ -41,7 +41,7 @@
                     class="form-select text-start category-dropdown-trigger"
                     disabled="@(!AvailableCategories.Any())"
                     @onclick="ToggleDropdown">
-                @(AvailableCategories.Any() ? "-- Select a category --" : "-- All categories selected --")
+                @(AvailableCategories.Any() ? "-- Select a category --" : "\u00A0")
             </button>
 
             @if (isDropdownOpen && AvailableCategories.Any())
