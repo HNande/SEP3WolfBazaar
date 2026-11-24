@@ -20,6 +20,9 @@ public class ItemDto
     [Range(0, 1000000, ErrorMessage = "Price must be between 0 and 1,000,000.")]
     public int? Price { get; set; }
 
+    [JsonPropertyName("categories")]
+    public List<Category>? Categories { get; set; } = new List<Category>(); 
+
     [JsonPropertyName("imageList")]
     public List<PhotoDto> ImageList { get; set; } = new List<PhotoDto>();
 

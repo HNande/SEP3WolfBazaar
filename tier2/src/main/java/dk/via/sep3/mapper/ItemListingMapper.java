@@ -26,10 +26,11 @@ public final class ItemListingMapper {
 
   public static UpdateItemListingRequest toUpdateRequest(int id, ItemListingJsonDTO dto) {
     UpdateItemListingRequest.Builder builder = UpdateItemListingRequest.newBuilder()
-        .setItemId(id)
-        .setItemName(dto.itemName())
-        .setDescription(dto.description())
-        .setPrice(dto.price());
+            .setItemId(id)
+            .setItemName(dto.itemName())
+            .setDescription(dto.description())
+            .setPrice(dto.price())
+            .addAllCategories(dto.categories());
 
     for (ImageJsonDTO image : dto.imageList()) {
       builder.addImages(toImage(image));

@@ -41,16 +41,6 @@ public class HttpItemService : IItemService
                ?? throw new InvalidOperationException("Failed to deserialize item response.");
     }
 
-    public async Task<IEnumerable<ItemSummaryDto>> GetItemSummariesAsync()
-    {
-        var response = await _http.GetAsync("api/item");
-        if (!response.IsSuccessStatusCode)
-            throw new Exception(await ReadErrorAsync(response));
-
-        return await response.Content.ReadFromJsonAsync<IEnumerable<ItemSummaryDto>>()
-               ?? Enumerable.Empty<ItemSummaryDto>();
-    }
-
     public async Task<Dictionary<int, string>> GetThumbnailsAsync(IEnumerable<int> ids)
     {
         var idList = ids.Distinct().ToList();
@@ -65,9 +55,11 @@ public class HttpItemService : IItemService
         foreach (var t in thumbnails)
         {
             var mime = ToMimeType(t.Filetype);
-            if (mime is null || string.IsNullOrEmpty(t.Data))
+            if (mime is null)
+            {
+                Console.WriteLine($"Unsupported thumbnail format {t.Filetype} for item {t.ItemId}. Skipping thumbnail.");
                 continue;
-
+            }
             result[t.ItemId] = $"data:{mime};base64,{t.Data}";
         }
 
@@ -85,9 +77,16 @@ public class HttpItemService : IItemService
 
         foreach (var file in fileList)
         {
-            var contentType = file.ContentType?.ToLowerInvariant();
+            var contentType = file.ContentType.ToLowerInvariant();
             if (contentType is not ("image/png" or "image/jpeg" or "image/jpg"))
-                throw new ArgumentException($"File {file.Name} must be in PNG or JPEG format.");
+                throw new ArgumentException($"File {file.Name} must be in PNG/JPG/JPEG format.");
+            var phototContentType = contentType switch
+            {
+                "image/jpeg" => PhotoFormat.JPEG, 
+                "image/jpg" => PhotoFormat.JPG,
+                "image/png" => PhotoFormat.PNG,
+                _ => PhotoFormat.UNRECOGNIZED
+            };
 
             using var stream = file.OpenReadStream(maxAllowedSize: MaxFileBytes);
             using var memoryStream = new MemoryStream();
@@ -107,7 +106,7 @@ public class HttpItemService : IItemService
                 Name = file.Name,
                 Width = image.Width,
                 Height = image.Height,
-                Filetype = contentType == "image/png" ? "PNG" : "JPG",
+                Filetype = phototContentType,
                 Data = fileBytes
             });
         }
@@ -130,19 +129,17 @@ public class HttpItemService : IItemService
         return $"Request failed (HTTP {(int)response.StatusCode} {response.ReasonPhrase})";
     }
 
-    private static string? ToMimeType(string? filetype)
+    private static string? ToMimeType(PhotoFormat filetype)
     {
-        if (string.IsNullOrWhiteSpace(filetype))
-            return null;
-
-        var value = filetype.Trim().TrimStart('.').ToLowerInvariant();
-
-        return value switch
+        string? mime = filetype switch
         {
-            "png" => "image/png",
-            "jpg" or "jpeg" => "image/jpeg",
+            PhotoFormat.JPEG => "image/jpeg", 
+            PhotoFormat.JPG => "image/jpg",
+            PhotoFormat.PNG => "image/png",
             _ => null
         };
+
+        return mime;
     }
     
     public async Task DeleteItemAsync(int id)
@@ -162,6 +159,9 @@ public class HttpItemService : IItemService
 
         if (existingPhotos.Count + fileList.Count > MaxPictures)
             throw new ArgumentException($"You can have a maximum of {MaxPictures} pictures in total.");
+        
+        if (itemDto.Categories.Count == 0)
+            throw new ArgumentException("At least one category must be selected.");
 
         if (existingPhotos.Count + fileList.Count == 0)
             throw new ArgumentException("Item must have at least one picture.");
@@ -173,5 +173,28 @@ public class HttpItemService : IItemService
         var response = await _http.PutAsJsonAsync($"api/item/{itemDto.Id}", itemDto);
         if (!response.IsSuccessStatusCode)
             throw new Exception(await ReadErrorAsync(response));
+    }
+    
+    public async Task<IEnumerable<ItemSummaryDto>> GetItemSummariesAsync(ItemSearchCriteria criteria)
+    {
+        var query = new List<string>
+        {
+            $"orderByPrice={criteria.OrderByPrice}",
+            $"orderByDate={criteria.OrderByDate}",
+            $"counter={criteria.Counter}"
+        };
+
+        if (!string.IsNullOrWhiteSpace(criteria.Title))
+            query.Add($"title={Uri.EscapeDataString(criteria.Title.Trim())}");
+
+        foreach (var category in criteria.Categories.Where(c => c != Category.CategoryUnspecified).Distinct())
+            query.Add($"categories={JsonSerializer.Serialize(category).Trim('"')}");
+
+        var response = await _http.GetAsync($"api/item?{string.Join("&", query)}");
+        if (!response.IsSuccessStatusCode)
+            throw new Exception(await ReadErrorAsync(response));
+
+        return await response.Content.ReadFromJsonAsync<IEnumerable<ItemSummaryDto>>()
+               ?? Enumerable.Empty<ItemSummaryDto>();
     }
 }

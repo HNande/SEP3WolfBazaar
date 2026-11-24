@@ -15,6 +15,9 @@ public class ItemSummaryDto
 
     [JsonPropertyName("ownerId")]
     public int OwnerId { get; set; }
+    
+    [JsonPropertyName("categories")]
+    public List<Category>? Categories { get; set; } = new();
 
     [JsonIgnore]
     public string? ImageUrl { get; set; }

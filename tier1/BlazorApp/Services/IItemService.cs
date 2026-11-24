@@ -7,8 +7,8 @@ public interface IItemService
 {
     Task CreateItemAsync(ItemDto itemDto, IEnumerable<IBrowserFile> files);
     Task<ItemDto> GetItemByIdAsync(int id);
-    Task<IEnumerable<ItemSummaryDto>> GetItemSummariesAsync();
     Task<Dictionary<int, string>> GetThumbnailsAsync(IEnumerable<int> ids);
     Task DeleteItemAsync(int id);
     Task UpdateItemAsync(ItemDto itemDto, IEnumerable<IBrowserFile> newFiles);
+    Task<IEnumerable<ItemSummaryDto>> GetItemSummariesAsync(ItemSearchCriteria criteria);
 }

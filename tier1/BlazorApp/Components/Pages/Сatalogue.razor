@@ -1,6 +1,5 @@
 @page "/"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
-@using Microsoft.AspNetCore.Components.Authorization
 @inject IItemService ItemService
 @inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager Navigation
@@ -23,11 +22,90 @@
     </div>
 
     <div class="main-card mb-4 p-3 rounded shadow-sm">
-        <div class="search-box mb-2">
-            <span>A search bar could go here</span>
+        <div class="search-box mb-2 d-flex gap-2">
+            <input class="good-form-control"
+                   type="text"
+                   maxlength="100"
+                   placeholder="Search by title..."
+                   @bind="searchText"
+                   @bind:event="oninput"
+                   @onkeydown="OnSearchKeyDown" />
+            <button class="btn auth-pill" disabled="@isLoading" @onclick="SearchAsync">Search</button>
+            @if (!string.IsNullOrEmpty(criteria.Title))
+            {
+                <button class="btn auth-pill" disabled="@isLoading" @onclick="ClearSearchAsync">Clear</button>
+            }
         </div>
-        <div class="tags-box">
-            <span>Tags for filtering will go here</span>
+                <div class="tags-box filter-bar">
+            <div class="position-relative">
+                <button type="button"
+                        class="form-select text-start category-dropdown-trigger"
+                        disabled="@(!AvailableCategories.Any())"
+                        @onclick="ToggleDropdown">
+                    @(AvailableCategories.Any() ? "-- Select a category --" : "-- All categories selected --")
+                </button>
+
+                @if (isDropdownOpen && AvailableCategories.Any())
+                {
+                    <div class="category-dropdown-menu position-absolute w-100">
+                        @foreach (var category in AvailableCategories)
+                        {
+                            var cat = category;
+                            <button type="button"
+                                    class="category-dropdown-item"
+                                    disabled="@isLoading"
+                                    @onclick="() => SelectCategoryAsync(cat)">
+                                <span class="category-dropdown-plus">+</span>@FormatCategoryName(cat)
+                            </button>
+                        }
+
+                        <div class="category-dropdown-footer">
+                            <button type="button"
+                                    class="auth-pill"
+                                    style="padding: 0.25rem 0.95rem; font-size: 0.85rem;"
+                                    @onclick="CloseDropdown">
+                                Done
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="filter-bar-chips">
+                @foreach (var category in criteria.Categories)
+                {
+                    var cat = category;
+                    <span class="category-chip">
+                        <span>@FormatCategoryName(cat)</span>
+                        <button type="button"
+                                class="btn-close btn-close-white"
+                                style="font-size: 0.65rem;"
+                                aria-label="Remove @FormatCategoryName(cat)"
+                                disabled="@isLoading"
+                                @onclick="() => RemoveCategoryAsync(cat)"></button>
+                    </span>
+                }
+            </div>
+
+            <div class="lights-block">
+                <div class="lights-row">
+                    <button type="button" class="@LightClass(criteria.OrderByPrice == 1, priceLight)"
+                            disabled="@isLoading" @onclick="() => SetPriceOrderAsync(1)">Low &rarr; High</button>
+                    <button type="button" class="@LightClass(criteria.OrderByPrice == 0, priceLight)"
+                            disabled="@isLoading" @onclick="() => SetPriceOrderAsync(0)">Price</button>
+                    <button type="button" class="@LightClass(criteria.OrderByPrice == 2, priceLight)"
+                            disabled="@isLoading" @onclick="() => SetPriceOrderAsync(2)">High &rarr; Low</button>
+                </div>
+
+                <div class="lights-row">
+                    <button type="button" class="@LightClass(criteria.OrderByDate == 1, dateLight)"
+                            disabled="@isLoading" @onclick="() => SetDateOrderAsync(1)">New &rarr; Old</button>
+                    <button type="button" class="@LightClass(criteria.OrderByDate == 0, dateLight)"
+                            disabled="@isLoading" @onclick="() => SetDateOrderAsync(0)">Date</button>
+                    <button type="button" class="@LightClass(criteria.OrderByDate == 2, dateLight)"
+                            disabled="@isLoading" @onclick="() => SetDateOrderAsync(2)">Old &rarr; New</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -47,9 +125,11 @@
                 <button class="btn btn-sm btn-outline-danger ms-3" @onclick="ReloadItems">Try Again</button>
             </div>
         }
-        else if (allItems == null || !allItems.Any())
+        else if (items.Count == 0)
         {
-            <p class="text-muted">No items found.</p>
+            <p class="text-muted">
+                @(HasActiveSearch ? "No items match your search." : "No items found.")
+            </p>
         }
         else
         {
@@ -59,7 +139,7 @@
             }
 
             <div class="custom-items-grid">
-                @foreach (var item in displayedItems)
+                @foreach (var item in items)
                 {
                     <div class="item-card-wrapper" @key="item.Id">
                         <div class="card item-card p-3 shadow-sm h-100">
@@ -82,6 +162,18 @@
                             <p class="mb-0 item-price">
                                 <strong>Price:</strong> @(item.Price == 0 ? "Free" : "$" + item.Price.ToString("N0"))
                             </p>
+
+                            @if (item.Categories is { Count: > 0 })
+                            {
+                                <div class="d-flex flex-wrap gap-1 mt-2">
+                                    @foreach (var category in item.Categories)
+                                    {
+                                        <span class="category-chip" style="padding: 0.15rem 0.6rem; font-size: 0.75rem;">
+                                            @FormatCategoryName(category)
+                                        </span>
+                                    }
+                                </div>
+                            }
 
                             @if (currentUserId.HasValue && item.OwnerId == currentUserId.Value)
                             {
@@ -124,12 +216,21 @@
                 }
             </div>
 
-            @if (allItems.Count > displayedItems.Count)
-            {
-                <div class="text-center mt-4 w-100">
-                    <button class="btn load-more-btn" @onclick="LoadMore">Load More (10)</button>
-                </div>
-            }
+            <div class="d-flex justify-content-center align-items-center gap-3 mt-4 w-100">
+                <button class="btn load-more-btn"
+                        aria-label="Previous page"
+                        disabled="@(currentPage <= 1)"
+                        @onclick="PreviousPage">
+                    &larr;
+                </button>
+                <span class="yellow-text">Page @currentPage</span>
+                <button class="btn load-more-btn"
+                        aria-label="Next page"
+                        disabled="@(!hasNextPage)"
+                        @onclick="NextPage">
+                    &rarr;
+                </button>
+            </div>
         }
     </div>
 </div>
@@ -137,12 +238,13 @@
 @code {
     private const int PageSize = 10;
 
-    private List<ItemSummaryDto> allItems = new();
-    private List<ItemSummaryDto> displayedItems = new();
-
+    private List<ItemSummaryDto> items = new();
     private readonly Dictionary<int, string> thumbnailCache = new();
+    private readonly ItemSearchCriteria criteria = new();
 
-    private int pageSize = PageSize;
+    private string searchText = string.Empty;
+    private int currentPage = 1;
+    private bool hasNextPage;
     private bool isLoading = true;
     private string? loadErrorMessage;
 
@@ -150,6 +252,81 @@
     private int? deletingId;
     private string? actionErrorMessage;
     private int? currentUserId;
+    private bool isDropdownOpen;
+
+    private bool HasActiveSearch =>
+        !string.IsNullOrEmpty(criteria.Title) || criteria.Categories.Count > 0;
+
+    private IEnumerable<Category> AvailableCategories =>
+        Enum.GetValues<Category>()
+            .Where(c => c != Category.CategoryUnspecified && !criteria.Categories.Contains(c));
+    
+    private static readonly string[] LightColors = { "light-red", "light-green", "light-blue" };
+    private string priceLight = LightColors[Random.Shared.Next(LightColors.Length)];
+    private string dateLight = LightColors[Random.Shared.Next(LightColors.Length)];
+    
+    private static string NextLight(string current)
+    {
+        var options = LightColors.Where(c => c != current).ToArray();
+        return options[Random.Shared.Next(options.Length)];
+    }
+
+    private static string LightClass(bool active, string color) =>
+        active ? $"light-bulb light-on {color}" : "light-bulb";
+    
+    private void ToggleDropdown()
+    {
+        if (AvailableCategories.Any())
+        {
+            isDropdownOpen = !isDropdownOpen;
+        }
+    }
+
+    private void CloseDropdown()
+    {
+        isDropdownOpen = false;
+    }
+
+    private async Task SelectCategoryAsync(Category category)
+    {
+        if (criteria.Categories.Contains(category))
+            return;
+
+        criteria.Categories.Add(category);
+
+        if (!AvailableCategories.Any())
+        {
+            isDropdownOpen = false;
+        }
+
+        await LoadPageAsync(1);
+    }
+
+    private async Task RemoveCategoryAsync(Category category)
+    {
+        criteria.Categories.Remove(category);
+        await LoadPageAsync(1);
+    }
+
+    private async Task SetPriceOrderAsync(int value)
+    {
+        if (criteria.OrderByPrice == value)
+            return;
+
+        criteria.OrderByPrice = value;
+        priceLight = NextLight(priceLight);
+        await LoadPageAsync(1);
+    }
+
+    private async Task SetDateOrderAsync(int value)
+    {
+        if (criteria.OrderByDate == value)
+            return;
+
+        criteria.OrderByDate = value;
+        dateLight = NextLight(dateLight);
+        await LoadPageAsync(1);
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -160,22 +337,22 @@
             currentUserId = parsedId;
         }
 
-        await LoadDataAsync();
+        await LoadPageAsync(1);
     }
 
-    private async Task LoadDataAsync()
+    private async Task LoadPageAsync(int page)
     {
+        isLoading = true;
+        loadErrorMessage = null;
+        actionErrorMessage = null;
+        confirmDeleteId = null;
+
+        List<ItemSummaryDto> result;
+
         try
         {
-            isLoading = true;
-            loadErrorMessage = null;
-            actionErrorMessage = null;
-
-            var result = await ItemService.GetItemSummariesAsync();
-            allItems = result.ToList();
-
-            pageSize = PageSize;
-            UpdateDisplayedItems();
+            criteria.Counter = page;
+            result = (await ItemService.GetItemSummariesAsync(criteria)).ToList();
         }
         catch (Exception ex)
         {
@@ -185,34 +362,71 @@
             return;
         }
 
+        if (result.Count == 0 && page > 1)
+        {
+            if (page > currentPage)
+            {
+                hasNextPage = false;
+                isLoading = false;
+                return;
+            }
+
+            await LoadPageAsync(page - 1);
+            return;
+        }
+
+        items = result;
+        currentPage = page;
+        hasNextPage = result.Count >= PageSize;
+
+        ApplyCachedThumbnails(items);
         isLoading = false;
-
         StateHasChanged();
 
-        await LoadThumbnailsAsync(displayedItems);
+        await LoadThumbnailsAsync(items);
     }
 
-    private void UpdateDisplayedItems()
+    private async Task SearchAsync()
     {
-        displayedItems = allItems.Take(pageSize).ToList();
+        criteria.Title = searchText.Trim();
+        await LoadPageAsync(1);
     }
 
-    private async Task LoadMore()
+    private async Task ClearSearchAsync()
     {
-        var previousCount = displayedItems.Count;
-
-        pageSize += PageSize;
-        UpdateDisplayedItems();
-
-        var newItems = displayedItems.Skip(previousCount).ToList();
-        StateHasChanged();
-
-        await LoadThumbnailsAsync(newItems);
+        searchText = string.Empty;
+        await SearchAsync();
     }
 
-    private async Task LoadThumbnailsAsync(IEnumerable<ItemSummaryDto> items)
+    private async Task OnSearchKeyDown(KeyboardEventArgs e)
     {
-        var batch = items.ToList();
+        if (e.Key == "Enter" && !isLoading)
+        {
+            await SearchAsync();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        await LoadPageAsync(currentPage + 1);
+    }
+
+    private async Task PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            await LoadPageAsync(currentPage - 1);
+        }
+    }
+
+    private async Task ReloadItems()
+    {
+        await LoadPageAsync(currentPage);
+    }
+
+    private async Task LoadThumbnailsAsync(IEnumerable<ItemSummaryDto> source)
+    {
+        var batch = source.ToList();
 
         ApplyCachedThumbnails(batch);
 
@@ -241,20 +455,15 @@
         }
     }
 
-    private void ApplyCachedThumbnails(IEnumerable<ItemSummaryDto> items)
+    private void ApplyCachedThumbnails(IEnumerable<ItemSummaryDto> source)
     {
-        foreach (var item in items)
+        foreach (var item in source)
         {
             if (thumbnailCache.TryGetValue(item.Id, out var dataUrl))
             {
                 item.ImageUrl = dataUrl;
             }
         }
-    }
-
-    private async Task ReloadItems()
-    {
-        await LoadDataAsync();
     }
 
     private void AskDelete(int id)
@@ -276,11 +485,13 @@
         try
         {
             await ItemService.DeleteItemAsync(id);
-            await RemoveFromListAsync(id);
+            thumbnailCache.Remove(id);
+            await LoadPageAsync(currentPage);
         }
         catch (KeyNotFoundException)
         {
-            await RemoveFromListAsync(id);
+            thumbnailCache.Remove(id);
+            await LoadPageAsync(currentPage);
         }
         catch (Exception ex)
         {
@@ -292,16 +503,13 @@
             confirmDeleteId = null;
         }
     }
-
-    private async Task RemoveFromListAsync(int id)
+    
+    private static string FormatCategoryName(Category category) => category switch
     {
-        allItems.RemoveAll(i => i.Id == id);
-        thumbnailCache.Remove(id);
-
-        var shownBefore = displayedItems.Select(i => i.Id).ToHashSet();
-        UpdateDisplayedItems();
-
-        var newlyShown = displayedItems.Where(i => !shownBefore.Contains(i.Id)).ToList();
-        await LoadThumbnailsAsync(newlyShown);
-    }
+        Category.CategoryHouseholdGoods => "Household goods",
+        Category.CategoryPrivateServices => "Private services",
+        Category.CategoryPetSupplies => "Pet supplies",
+        Category.CategoryOutdoorGoods => "Outdoor goods",
+        _ => category.ToString().Replace("Category", "")
+    };
 }
