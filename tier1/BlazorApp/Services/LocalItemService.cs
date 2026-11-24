@@ -90,6 +90,72 @@ public class LocalItemService : IItemService
             Categories = new List<Category> { Category.CategoryClothing, Category.CategoryElectronics, Category.CategoryFootwear },
             Photos = new List<PhotoDto>()
         });
+        
+        _items.Add(new StoredItem
+        {
+            Id = _nextId++,
+            Name = "Vintage Leather Jacket",
+            Description = "Genuine leather jacket in great condition, size M, barely worn.",
+            Price = 180,
+            OwnerId = 1,
+            Categories = new List<Category> { Category.CategoryClothing },
+            Photos = new List<PhotoDto>()
+        });
+
+        _items.Add(new StoredItem
+        {
+            Id = _nextId++,
+            Name = "Running Shoes Size 42",
+            Description = "Lightly used running shoes, comfortable and well cushioned.",
+            Price = 45,
+            OwnerId = 8800,
+            Categories = new List<Category> { Category.CategoryFootwear },
+            Photos = new List<PhotoDto>()
+        });
+
+        _items.Add(new StoredItem
+        {
+            Id = _nextId++,
+            Name = "Wireless Headphones",
+            Description = "Bluetooth over-ear headphones with noise cancelling, works perfectly.",
+            Price = 90,
+            OwnerId = 1,
+            Categories = new List<Category> { Category.CategoryElectronics },
+            Photos = new List<PhotoDto>()
+        });
+
+        _items.Add(new StoredItem
+        {
+            Id = _nextId++,
+            Name = "Silver Pendant Necklace",
+            Description = "Handmade silver necklace with a small moonstone pendant.",
+            Price = 120,
+            OwnerId = 8800,
+            Categories = new List<Category> { Category.CategoryJewelry, Category.CategoryCuriosities },
+            Photos = new List<PhotoDto>()
+        });
+
+        _items.Add(new StoredItem
+        {
+            Id = _nextId++,
+            Name = "Garden Tool Set",
+            Description = "Set of five stainless steel garden tools with a carrying bag.",
+            Price = 0,
+            OwnerId = 8800,
+            Categories = new List<Category> { Category.CategoryGardening, Category.CategoryOutdoorGoods },
+            Photos = new List<PhotoDto>()
+        });
+
+        _items.Add(new StoredItem
+        {
+            Id = _nextId++,
+            Name = "Dog Training Lessons",
+            Description = "One hour of private dog training at your home, price per session.",
+            Price = 35,
+            OwnerId = 1,
+            Categories = new List<Category> { Category.CategoryPrivateServices, Category.CategoryPetSupplies },
+            Photos = new List<PhotoDto>()
+        });
     }
 
     public async Task CreateItemAsync(ItemDto itemDto, IEnumerable<IBrowserFile> files)
@@ -239,5 +305,60 @@ public class LocalItemService : IItemService
         }
 
         return result;
+    }
+    
+    public Task<IEnumerable<ItemSummaryDto>> GetItemSummariesAsync(ItemSearchCriteria criteria)
+    {
+        const int batchSize = 10;
+
+        if (criteria.Counter < 1)
+            throw new ArgumentException("Counter must be at least 1");
+
+        lock (_lock)
+        {
+            IEnumerable<StoredItem> query = _items;
+
+            if (criteria.Categories.Count > 0)
+                query = query.Where(i => i.Categories.Intersect(criteria.Categories).Any());
+
+            var title = criteria.Title?.Trim();
+            if (!string.IsNullOrEmpty(title))
+                query = query.Where(i => i.Name.Contains(title, StringComparison.OrdinalIgnoreCase));
+
+            IOrderedEnumerable<StoredItem>? ordered = null;
+
+            if (criteria.OrderByPrice != 0)
+            {
+                ordered = criteria.OrderByPrice == 1
+                    ? query.OrderBy(i => i.Price)
+                    : query.OrderByDescending(i => i.Price);
+            }
+
+            if (criteria.OrderByDate != 0)
+            {
+                ordered = ordered == null
+                    ? (criteria.OrderByDate == 1 ? query.OrderByDescending(i => i.Id) : query.OrderBy(i => i.Id))
+                    : (criteria.OrderByDate == 1 ? ordered.ThenByDescending(i => i.Id) : ordered.ThenBy(i => i.Id));
+            }
+
+            if (ordered != null)
+                query = ordered;
+
+            var summaries = query
+                .Skip((criteria.Counter - 1) * batchSize)
+                .Take(batchSize)
+                .Select(i => new ItemSummaryDto
+                {
+                    Id = i.Id,
+                    Name = i.Name,
+                    Description = i.Description,
+                    Price = i.Price,
+                    OwnerId = i.OwnerId,
+                    Categories = i.Categories.ToList()
+                })
+                .ToList();
+
+            return Task.FromResult<IEnumerable<ItemSummaryDto>>(summaries);
+        }
     }
 }

@@ -107,7 +107,7 @@ public class HttpItemService : IItemService
                 Name = file.Name,
                 Width = image.Width,
                 Height = image.Height,
-                Filetype = contentType == "image/png" ? "IMAGE_FILE_TYPE_PNG" : "IMAGE_FILE_TYPE_JPG",
+                Filetype = contentType == "image/png" ? "PNG" : "JPG",
                 Data = fileBytes
             });
         }
@@ -176,5 +176,28 @@ public class HttpItemService : IItemService
         var response = await _http.PutAsJsonAsync($"api/item/{itemDto.Id}", itemDto);
         if (!response.IsSuccessStatusCode)
             throw new Exception(await ReadErrorAsync(response));
+    }
+    
+    public async Task<IEnumerable<ItemSummaryDto>> GetItemSummariesAsync(ItemSearchCriteria criteria)
+    {
+        var query = new List<string>
+        {
+            $"orderByPrice={criteria.OrderByPrice}",
+            $"orderByDate={criteria.OrderByDate}",
+            $"counter={criteria.Counter}"
+        };
+
+        if (!string.IsNullOrWhiteSpace(criteria.Title))
+            query.Add($"title={Uri.EscapeDataString(criteria.Title.Trim())}");
+
+        foreach (var category in criteria.Categories.Where(c => c != Category.CategoryUnspecified).Distinct())
+            query.Add($"categories={JsonSerializer.Serialize(category).Trim('"')}");
+
+        var response = await _http.GetAsync($"api/item?{string.Join("&", query)}");
+        if (!response.IsSuccessStatusCode)
+            throw new Exception(await ReadErrorAsync(response));
+
+        return await response.Content.ReadFromJsonAsync<IEnumerable<ItemSummaryDto>>()
+               ?? Enumerable.Empty<ItemSummaryDto>();
     }
 }

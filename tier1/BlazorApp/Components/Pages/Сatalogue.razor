@@ -1,6 +1,5 @@
 @page "/"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
-@using Microsoft.AspNetCore.Components.Authorization
 @inject IItemService ItemService
 @inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager Navigation
@@ -23,8 +22,19 @@
     </div>
 
     <div class="main-card mb-4 p-3 rounded shadow-sm">
-        <div class="search-box mb-2">
-            <span>A search bar could go here</span>
+        <div class="search-box mb-2 d-flex gap-2">
+            <input class="good-form-control"
+                   type="text"
+                   maxlength="100"
+                   placeholder="Search by title..."
+                   @bind="searchText"
+                   @bind:event="oninput"
+                   @onkeydown="OnSearchKeyDown" />
+            <button class="btn auth-pill" disabled="@isLoading" @onclick="SearchAsync">Search</button>
+            @if (!string.IsNullOrEmpty(criteria.Title))
+            {
+                <button class="btn auth-pill" disabled="@isLoading" @onclick="ClearSearchAsync">Clear</button>
+            }
         </div>
         <div class="tags-box">
             <span>Tags for filtering will go here</span>
@@ -47,9 +57,11 @@
                 <button class="btn btn-sm btn-outline-danger ms-3" @onclick="ReloadItems">Try Again</button>
             </div>
         }
-        else if (allItems == null || !allItems.Any())
+        else if (items.Count == 0)
         {
-            <p class="text-muted">No items found.</p>
+            <p class="text-muted">
+                @(string.IsNullOrEmpty(criteria.Title) ? "No items found." : "No items match your search.")
+            </p>
         }
         else
         {
@@ -59,7 +71,7 @@
             }
 
             <div class="custom-items-grid">
-                @foreach (var item in displayedItems)
+                @foreach (var item in items)
                 {
                     <div class="item-card-wrapper" @key="item.Id">
                         <div class="card item-card p-3 shadow-sm h-100">
@@ -79,12 +91,11 @@
 
                             <h3 class="h5 item-title mt-2">@item.Name</h3>
                             <p class="item-description">@item.Description</p>
-                            
                             <p class="mb-0 item-price">
                                 <strong>Price:</strong> @(item.Price == 0 ? "Free" : "$" + item.Price.ToString("N0"))
                             </p>
 
-                            @if (item.Categories.Count > 0)
+                            @if (item.Categories is { Count: > 0 })
                             {
                                 <div class="d-flex flex-wrap gap-1 mt-2">
                                     @foreach (var category in item.Categories)
@@ -137,12 +148,21 @@
                 }
             </div>
 
-            @if (allItems.Count > displayedItems.Count)
-            {
-                <div class="text-center mt-4 w-100">
-                    <button class="btn load-more-btn" @onclick="LoadMore">Load More (10)</button>
-                </div>
-            }
+            <div class="d-flex justify-content-center align-items-center gap-3 mt-4 w-100">
+                <button class="btn load-more-btn"
+                        aria-label="Previous page"
+                        disabled="@(currentPage <= 1)"
+                        @onclick="PreviousPage">
+                    &larr;
+                </button>
+                <span class="yellow-text">Page @currentPage</span>
+                <button class="btn load-more-btn"
+                        aria-label="Next page"
+                        disabled="@(!hasNextPage)"
+                        @onclick="NextPage">
+                    &rarr;
+                </button>
+            </div>
         }
     </div>
 </div>
@@ -150,12 +170,13 @@
 @code {
     private const int PageSize = 10;
 
-    private List<ItemSummaryDto> allItems = new();
-    private List<ItemSummaryDto> displayedItems = new();
-
+    private List<ItemSummaryDto> items = new();
     private readonly Dictionary<int, string> thumbnailCache = new();
+    private readonly ItemSearchCriteria criteria = new();
 
-    private int pageSize = PageSize;
+    private string searchText = string.Empty;
+    private int currentPage = 1;
+    private bool hasNextPage;
     private bool isLoading = true;
     private string? loadErrorMessage;
 
@@ -173,22 +194,22 @@
             currentUserId = parsedId;
         }
 
-        await LoadDataAsync();
+        await LoadPageAsync(1);
     }
 
-    private async Task LoadDataAsync()
+    private async Task LoadPageAsync(int page)
     {
+        isLoading = true;
+        loadErrorMessage = null;
+        actionErrorMessage = null;
+        confirmDeleteId = null;
+
+        List<ItemSummaryDto> result;
+
         try
         {
-            isLoading = true;
-            loadErrorMessage = null;
-            actionErrorMessage = null;
-
-            var result = await ItemService.GetItemSummariesAsync();
-            allItems = result.ToList();
-
-            pageSize = PageSize;
-            UpdateDisplayedItems();
+            criteria.Counter = page;
+            result = (await ItemService.GetItemSummariesAsync(criteria)).ToList();
         }
         catch (Exception ex)
         {
@@ -198,34 +219,71 @@
             return;
         }
 
+        if (result.Count == 0 && page > 1)
+        {
+            if (page > currentPage)
+            {
+                hasNextPage = false;
+                isLoading = false;
+                return;
+            }
+
+            await LoadPageAsync(page - 1);
+            return;
+        }
+
+        items = result;
+        currentPage = page;
+        hasNextPage = result.Count >= PageSize;
+
+        ApplyCachedThumbnails(items);
         isLoading = false;
-
         StateHasChanged();
 
-        await LoadThumbnailsAsync(displayedItems);
+        await LoadThumbnailsAsync(items);
     }
 
-    private void UpdateDisplayedItems()
+    private async Task SearchAsync()
     {
-        displayedItems = allItems.Take(pageSize).ToList();
+        criteria.Title = searchText.Trim();
+        await LoadPageAsync(1);
     }
 
-    private async Task LoadMore()
+    private async Task ClearSearchAsync()
     {
-        var previousCount = displayedItems.Count;
-
-        pageSize += PageSize;
-        UpdateDisplayedItems();
-
-        var newItems = displayedItems.Skip(previousCount).ToList();
-        StateHasChanged();
-
-        await LoadThumbnailsAsync(newItems);
+        searchText = string.Empty;
+        await SearchAsync();
     }
 
-    private async Task LoadThumbnailsAsync(IEnumerable<ItemSummaryDto> items)
+    private async Task OnSearchKeyDown(KeyboardEventArgs e)
     {
-        var batch = items.ToList();
+        if (e.Key == "Enter" && !isLoading)
+        {
+            await SearchAsync();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        await LoadPageAsync(currentPage + 1);
+    }
+
+    private async Task PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            await LoadPageAsync(currentPage - 1);
+        }
+    }
+
+    private async Task ReloadItems()
+    {
+        await LoadPageAsync(currentPage);
+    }
+
+    private async Task LoadThumbnailsAsync(IEnumerable<ItemSummaryDto> source)
+    {
+        var batch = source.ToList();
 
         ApplyCachedThumbnails(batch);
 
@@ -254,20 +312,15 @@
         }
     }
 
-    private void ApplyCachedThumbnails(IEnumerable<ItemSummaryDto> items)
+    private void ApplyCachedThumbnails(IEnumerable<ItemSummaryDto> source)
     {
-        foreach (var item in items)
+        foreach (var item in source)
         {
             if (thumbnailCache.TryGetValue(item.Id, out var dataUrl))
             {
                 item.ImageUrl = dataUrl;
             }
         }
-    }
-
-    private async Task ReloadItems()
-    {
-        await LoadDataAsync();
     }
 
     private void AskDelete(int id)
@@ -289,11 +342,13 @@
         try
         {
             await ItemService.DeleteItemAsync(id);
-            await RemoveFromListAsync(id);
+            thumbnailCache.Remove(id);
+            await LoadPageAsync(currentPage);
         }
         catch (KeyNotFoundException)
         {
-            await RemoveFromListAsync(id);
+            thumbnailCache.Remove(id);
+            await LoadPageAsync(currentPage);
         }
         catch (Exception ex)
         {
@@ -305,31 +360,13 @@
             confirmDeleteId = null;
         }
     }
-
-    private async Task RemoveFromListAsync(int id)
-    {
-        allItems.RemoveAll(i => i.Id == id);
-        thumbnailCache.Remove(id);
-
-        var shownBefore = displayedItems.Select(i => i.Id).ToHashSet();
-        UpdateDisplayedItems();
-
-        var newlyShown = displayedItems.Where(i => !shownBefore.Contains(i.Id)).ToList();
-        await LoadThumbnailsAsync(newlyShown);
-    }
     
     private static string FormatCategoryName(Category category) => category switch
     {
-        Category.CategoryClothing => "Clothing",
-        Category.CategoryFootwear => "Footwear",
-        Category.CategoryElectronics => "Electronics",
-        Category.CategoryMakeup => "Makeup",
-        Category.CategoryJewelry => "Jewelry",
-        Category.CategoryHouseholdGoods => "Household Goods",
-        Category.CategoryCuriosities => "Curiosities",
-        Category.CategoryPetSupplies => "Pet Supplies",
-        Category.CategoryGardening => "Gardening",
-        Category.CategoryOutdoorGoods => "Outdoor Goods",
-        _ => category.ToString()
+        Category.CategoryHouseholdGoods => "Household goods",
+        Category.CategoryPrivateServices => "Private services",
+        Category.CategoryPetSupplies => "Pet supplies",
+        Category.CategoryOutdoorGoods => "Outdoor goods",
+        _ => category.ToString().Replace("Category", "")
     };
 }
