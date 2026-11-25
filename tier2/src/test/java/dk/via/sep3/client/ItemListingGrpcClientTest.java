@@ -39,7 +39,8 @@ class ItemListingGrpcClientTest {
 
         @BeforeEach
         void setUp() {
-            validDto = new ItemListingJsonDTO("Laptop", "A used laptop", 500, Collections.emptyList(), 1);
+            validDto = new ItemListingJsonDTO(
+                    "Laptop", "A used laptop", 500, Collections.emptyList(), Collections.emptyList(), 1);
         }
 
         @Test
@@ -78,10 +79,12 @@ class ItemListingGrpcClientTest {
 
             boolean r1 = client.addItem(validDto);
             boolean r2 = client.addItem(
-                    new ItemListingJsonDTO("Phone", "A used phone", 300, Collections.emptyList(), 2)
+                    new ItemListingJsonDTO(
+                            "Phone", "A used phone", 300, Collections.emptyList(), Collections.emptyList(), 2)
             );
             boolean r3 = client.addItem(
-                    new ItemListingJsonDTO("Tablet", "A used tablet", 200, Collections.emptyList(), 3)
+                    new ItemListingJsonDTO(
+                            "Tablet", "A used tablet", 200, Collections.emptyList(), Collections.emptyList(), 3)
             );
 
             assertTrue(r1);
@@ -439,7 +442,7 @@ class ItemListingGrpcClientTest {
             GetItemThumbnailsResponse response = GetItemThumbnailsResponse.newBuilder()
                     .addThumbnails(ItemThumbnail.newBuilder()
                             .setItemId(1)
-                            .setFiletype(ImageFileType.IMAGE_FILE_TYPE_PNG)
+                            .setFiletype(ImageFileType.PNG)
                             .setWidth(100)
                             .setHeight(100)
                             .build())
@@ -460,9 +463,9 @@ class ItemListingGrpcClientTest {
         @DisplayName("returns thumbnails for multiple IDs")
         void many_multipleIds_returnMultipleThumbnails() {
             GetItemThumbnailsResponse response = GetItemThumbnailsResponse.newBuilder()
-                    .addThumbnails(ItemThumbnail.newBuilder().setItemId(1).setFiletype(ImageFileType.IMAGE_FILE_TYPE_PNG).build())
-                    .addThumbnails(ItemThumbnail.newBuilder().setItemId(2).setFiletype(ImageFileType.IMAGE_FILE_TYPE_JPG).build())
-                    .addThumbnails(ItemThumbnail.newBuilder().setItemId(3).setFiletype(ImageFileType.IMAGE_FILE_TYPE_JPEG).build())
+                    .addThumbnails(ItemThumbnail.newBuilder().setItemId(1).setFiletype(ImageFileType.PNG).build())
+                    .addThumbnails(ItemThumbnail.newBuilder().setItemId(2).setFiletype(ImageFileType.JPG).build())
+                    .addThumbnails(ItemThumbnail.newBuilder().setItemId(3).setFiletype(ImageFileType.JPEG).build())
                     .build();
 
             when(stub.withDeadlineAfter(anyLong(), any()))
