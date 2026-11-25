@@ -18,14 +18,13 @@ service MemberService{
   rpc GetMember (GetMemberRequest) returns (MemberResponse);
   rpc RemoveMember (RemoveMemberRequest) returns (google.protobuf.Empty);
   rpc Login (LoginRequest) returns (MemberResponse);
-  rpc CheckRegisterAvailability (CheckRegisterAvailabilityFieldRequest) returns (google.protobuf.Empty);
 }
 service ConversationService{
-  rpc AddConversation (AddConversationRequest) returns (google.protobuf.Empty);
+  rpc AddConversation (AddConversationRequest) returns (ConversationResponse);
+  rpc GetConversation (GetConversationRequest) returns (ConversationResponse);
   rpc RemoveConversation (RemoveConversationRequest) returns (google.protobuf.Empty);
-  rpc GetConversationList (ListConversationsRequest) returns (ListConversationsResponse);
-  rpc AddMessage (AddMessageRequest) returns (google.protobuf.Empty);
-  rpc GetMessagesList (ListMessagesRequest) returns (ListMessagesResponse);
+  rpc GetConversationSummaryList (ListConversationsSummaryRequest) returns (ListConversationSummaryResponse);
+  rpc AddMessage (AddMessageRequest) returns (MessageResponse);
 }
 //------Section global variables-------
 enum ImageFileType{
@@ -47,11 +46,7 @@ enum Category {
   GARDENING = 10;
   OUTDOOR_GOODS = 11;
 }
-enum MemberField{
-  MEMBER_FIELD_UNSPECIFIED = 0;
-  MEMBER_FIELD_NAME        = 1;
-  MEMBER_FIELD_EMAIL       = 2;
-}
+
 message Date {
   int32 year = 1;
   int32 month = 2;
@@ -70,6 +65,11 @@ message ItemSummary {
   string description = 3;
   int32 price = 4;
   int32 ownerId = 5;
+}
+message ConversationSummary{
+  int32 id = 1;
+  int32 ownerId = 2;
+  string itemName = 3;
 }
 // price 0 = no filtering, 1 = false (Low to High), 2 = true (High to Low)
 // date 0 = no filtering, 1 = false (Recent to Old), 2 = true (Old to Recent)
@@ -114,8 +114,7 @@ message Message {
 }
 message Conversation {
   int32 id = 1;
-  repeated int32 participant_ids = 2;
-  int32  item_listing_id = 3;
+  repeated Message messages = 2;
 }
 //---------Rpc Requests and Responses--------
 
@@ -139,8 +138,9 @@ message AddMemberRequest{
   string lastName = 5;
 }
 message AddConversationRequest{
-  repeated int32 participant_ids = 1;
-  int32  item_listing_id = 2;
+  int32 ownerId = 1;
+  int32 senderId = 2;
+  int32  item_listing_id = 3;
 }
 message AddMessageRequest{
   int32 conversation_id = 1;
@@ -151,6 +151,9 @@ message GetMemberRequest {
   int32 member_id = 1;
 }
 message GetItemListingRequest {
+  int32 id = 1;
+}
+message GetConversationRequest{
   int32 id = 1;
 }
 message ListItemListingforMemberRequest{
@@ -165,18 +168,10 @@ message ListItemListingSummaryRequest  {
   Filter filter = 3;
   int32 counter = 4;
 }
-message ListMessagesRequest {
-  int32 conversation_id = 1;
-  int32 page_size = 2;
-  string page_token = 3;
-}
-message ListConversationsRequest {
-  int32 member_id = 1;
-  int32 page_size = 2;
-  string page_token = 3;
-}
 
-//All rounder update request for items, if the update only contains specific fields use narrowed requests instead
+message ListConversationsSummaryRequest {
+  int32 member_id = 1;
+}
 message UpdateItemListingRequest{
   int32  item_id = 1;
   string itemName = 2;
@@ -186,22 +181,7 @@ message UpdateItemListingRequest{
   repeated Category categories = 6;
   repeated Image images = 7;
 }
-message UpdateItemListingNameRequest{
-  int32 item_id = 1;
-  string itemName = 2;
-}
-message UpdateItemListingDescRequest{
-  int32 item_id = 1;
-  string description = 2;
-}
-message UpdateItemListingPriceRequest{
-  int32 item_id = 1;
-  int32 price = 2;
-}
-message UpdateItemListingCategoryRequest{
-  int32 item_id = 1;
-  repeated Category categories = 2;
-}
+
 message RemoveItemListingRequest{
   int32 item_id = 1;
 }
@@ -231,19 +211,18 @@ message ListItemListingforMemberResponse {
 message GetItemThumbnailsResponse {
   repeated ItemThumbnail thumbnails = 1;
 }
-message ListConversationsResponse {
-  repeated Conversation conversations = 1;
-  string next_page_token = 2;
+message ListConversationSummaryResponse {
+  repeated ConversationSummary conversations = 1;
 }
 message ListMessagesResponse {
-  repeated Message messages = 1;
-  string next_page_token = 2;
+  repeated Message messageList = 1;
+}
+message ConversationResponse {
+  Conversation conversation = 1;
+}
+message MessageResponse {
+  Message message = 1;
 }
 message MemberResponse {
   Member member = 1;
-}
-//Check for a specific field of member when trying to register
-message CheckRegisterAvailabilityFieldRequest{
-  MemberField field = 1;
-  string content = 2;
 }
