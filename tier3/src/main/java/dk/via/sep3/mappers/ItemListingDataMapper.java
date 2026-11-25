@@ -5,6 +5,7 @@ import dk.via.sep3.dto.*;
 import dk.via.sep3.entities.ItemListing;
 import dk.via.sep3.generated.*;
 import dk.via.sep3.entities.ItemPicture;
+import dk.via.sep3.util.ListingCategories;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,14 +23,16 @@ public class ItemListingDataMapper {
 
   public static ItemListingDataDTO toDomainDTO(AddItemListingRequest request) {
     List<ImageDataDTO> images = request.getImagesList().stream()
-        .map(ItemListingDataMapper::toImageDTO)
-        .toList();
+            .map(ItemListingDataMapper::toImageDTO)
+            .toList();
+
     return new ItemListingDataDTO(
-        request.getItemName(),
-        request.getDescription(),
-        request.getPrice(),
-        new AlbumDataDTO(request.getItemName() + " Album", images),
-            request.getOwnerId());
+            request.getItemName(),
+            request.getDescription(),
+            request.getPrice(),
+            new AlbumDataDTO(request.getItemName() + " Album", images),
+            request.getOwnerId(),
+            ListingCategories.names(request.getCategoriesList()));
   }
 
   public static ItemListingResponseDTO toResponseDTO(ItemListing itemListing) {
@@ -49,11 +52,13 @@ public class ItemListingDataMapper {
   }
 
   private static List<dk.via.sep3.generated.Category> toCategoryDTOs(
-      Set<dk.via.sep3.entities.Category> categories) {
+          Set<dk.via.sep3.entities.Category> categories) {
     return categories.stream()
-        .map(c -> toProtoCategory(c.getName()))
-        .filter(c -> c != Category.UNSPECIFIED)
-        .toList();
+            .map(category -> ListingCategories.fromStoredName(category.getName()))
+            .filter(category -> category != dk.via.sep3.generated.Category.UNSPECIFIED)
+            .distinct()
+            .sorted()
+            .toList();
   }
 
   private static dk.via.sep3.generated.Category toProtoCategory(String name) {
@@ -61,7 +66,7 @@ public class ItemListingDataMapper {
       return dk.via.sep3.generated.Category.valueOf(
           "CATEGORY_" + name.trim().toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException e) {
-      return Category.UNSPECIFIED;
+      return dk.via.sep3.generated.Category.UNSPECIFIED;
     }
   }
 
@@ -161,19 +166,19 @@ public class ItemListingDataMapper {
   }
 
   private static ImageFileType toProtoFileType(String name) {
-    if (name == null) return ImageFileType.IMAGE_FILE_TYPE_PNG;
+    if (name == null) return ImageFileType.PNG;
     return switch (name.toUpperCase()) {
-      case "JPG" -> ImageFileType.IMAGE_FILE_TYPE_JPG;
-      case "JPEG" -> ImageFileType.IMAGE_FILE_TYPE_JPEG;
-      case "PNG" -> ImageFileType.IMAGE_FILE_TYPE_PNG;
-      default -> ImageFileType.IMAGE_FILE_TYPE_UNSPECIFIED;
+      case "JPG" -> ImageFileType.JPG;
+      case "JPEG" -> ImageFileType.JPEG;
+      case "PNG" -> ImageFileType.PNG;
+      default -> ImageFileType.PNG;
     };
   }
 
   private static String fromProtoFileType(ImageFileType type) {
     return switch (type) {
-      case IMAGE_FILE_TYPE_JPG -> "JPG";
-      case IMAGE_FILE_TYPE_JPEG -> "JPEG";
+      case JPG -> "JPG";
+      case JPEG -> "JPEG";
       default -> "PNG";
     };
   }

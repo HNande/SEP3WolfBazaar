@@ -27,6 +27,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import dk.via.sep3.entities.Category;
+import dk.via.sep3.repository.CategoryRepository;
+import java.util.HashSet;
+import java.util.Set;
+
 @Repository
 public class ItemListingDAO {
 
@@ -35,11 +40,14 @@ public class ItemListingDAO {
 
   private final ItemListingRepository itemListingRepository;
   private final Path imageDirectory;
+  private final CategoryRepository categoryRepository;
 
   public ItemListingDAO(
           ItemListingRepository itemListingRepository,
+          CategoryRepository categoryRepository,
           @Value("${wolfbazaar.images.dir:uploads/images}") String imageDirectory) {
     this.itemListingRepository = itemListingRepository;
+    this.categoryRepository = categoryRepository;
     this.imageDirectory = Path.of(imageDirectory).toAbsolutePath();
   }
 
@@ -51,6 +59,7 @@ public class ItemListingDAO {
     listing.setPrice(dto.price());
     listing.setListDate(LocalDate.now());
     listing.setOwnerId(dto.ownerId());
+    listing.getCategories().addAll(resolveCategories(dto.categoryNames()));
 
     Map<Path, byte[]> filesToWrite = new LinkedHashMap<>();
     if (dto.album() != null && dto.album().images() != null) {
@@ -138,7 +147,9 @@ public class ItemListingDAO {
   }
 
   @Transactional
-  public boolean updateItemListing(int itemId, String newName, String newDesc, int newPrice) {
+  public boolean updateItemListing(
+          int itemId, String newName, String newDesc, int newPrice,
+          List<String> categoryNames) {
     Optional<ItemListing> existingOpt = itemListingRepository.findById(itemId);
     if (existingOpt.isEmpty()) {
       return false;
@@ -154,9 +165,26 @@ public class ItemListingDAO {
     }
 
     listing.setPrice(newPrice);
+    if (!categoryNames.isEmpty()) {
+      Set<Category> categories = resolveCategories(categoryNames);
+      listing.getCategories().clear();
+      listing.getCategories().addAll(categories);
+    }
 
     itemListingRepository.save(listing);
     return true;
+  }
+
+  private Set<Category> resolveCategories(List<String> names) {
+    if (names.isEmpty()) {
+      return Set.of();
+    }
+
+    Set<Category> categories = new HashSet<>(categoryRepository.findByNameIn(names));
+    if (categories.size() != names.size()) {
+      throw new IllegalStateException("The listing category catalogue is incomplete");
+    }
+    return categories;
   }
 
   public record ItemListingPage(List<ItemListingResponseDTO> items, String nextPageToken) {}

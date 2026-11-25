@@ -20,6 +20,13 @@ public class GrpcClientConfig {
     }
 
     @Bean
+    ConversationServiceGrpc.ConversationServiceBlockingStub conversationStub(
+            GrpcChannelFactory channels,
+            @Value("${wolfbazaar.grpc.target:localhost:9090}") String target) {
+        return ConversationServiceGrpc.newBlockingStub(channels.createChannel(target));
+    }
+
+    @Bean
     MemberServiceGrpc.MemberServiceBlockingStub memberStub(
             GrpcChannelFactory channels,
             @Value("${wolfbazaar.grpc.target:localhost:9090}") String target) {
