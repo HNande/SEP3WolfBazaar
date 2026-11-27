@@ -22,17 +22,29 @@ public class ItemListingDataMapper {
   private static final Logger LOG = LoggerFactory.getLogger(ItemListingDataMapper.class);
 
   public static ItemListingDataDTO toDomainDTO(AddItemListingRequest request) {
-    List<ImageDataDTO> images = request.getImagesList().stream()
-            .map(ItemListingDataMapper::toImageDTO)
-            .toList();
-
     return new ItemListingDataDTO(
             request.getItemName(),
             request.getDescription(),
             request.getPrice(),
-            new AlbumDataDTO(request.getItemName() + " Album", images),
+            toImageDTOs(request.getImagesList()),
             request.getOwnerId(),
             ListingCategories.names(request.getCategoriesList()));
+  }
+
+  public static UpdateItemListingDataDTO toUpdateDTO(UpdateItemListingRequest request) {
+    return new UpdateItemListingDataDTO(
+            request.getItemId(),
+            request.getItemName(),
+            request.getDescription(),
+            request.getPrice(),
+            toImageDTOs(request.getImagesList()),
+            ListingCategories.names(request.getCategoriesList()));
+  }
+
+  private static List<ImageDataDTO> toImageDTOs(List<Image> images) {
+    return images.stream()
+            .map(ItemListingDataMapper::toImageDTO)
+            .toList();
   }
 
   public static ItemListingResponseDTO toResponseDTO(ItemListing itemListing) {
@@ -60,16 +72,6 @@ public class ItemListingDataMapper {
             .sorted()
             .toList();
   }
-
-  private static dk.via.sep3.generated.Category toProtoCategory(String name) {
-    try {
-      return dk.via.sep3.generated.Category.valueOf(
-          "CATEGORY_" + name.trim().toUpperCase(Locale.ROOT));
-    } catch (IllegalArgumentException e) {
-      return dk.via.sep3.generated.Category.UNSPECIFIED;
-    }
-  }
-
 
   public static List<ImageDataDTO> toDTO(List<ItemPicture> pictures) {
     if (pictures == null) {
@@ -112,6 +114,9 @@ public class ItemListingDataMapper {
         .setDescription(orEmpty(dto.description()))
         .setPrice(dto.price())
         .addAllCategories(dto.categoryList())
+        .addAllImages(dto.imageList().stream()
+            .map(ItemListingDataMapper::toProto)
+            .toList())
         .setOwnerId(dto.ownerId())
         .setDate(dk.via.sep3.generated.Date.newBuilder()
             .setYear(dto.year())

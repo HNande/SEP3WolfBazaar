@@ -7,6 +7,7 @@ import dk.via.sep3.dto.ThumbnailDataDTO;
 import dk.via.sep3.generated.*;
 import dk.via.sep3.mappers.ItemListingDataMapper;
 import dk.via.sep3.service.DataItemListingService;
+import dk.via.sep3.util.ListingCategories;
 import io.grpc.Context;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -82,10 +83,7 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
                 throw new IllegalArgumentException("Counter must be at least 1");
             }
 
-            List<String> categories = request.getCategoryListList().stream()
-                    .map(GrpcItemListingServer::searchCategoryName)
-                    .distinct()
-                    .toList();
+            List<String> categories = ListingCategories.searchNames(request.getCategoryListList());
             PageRequest page = PageRequest.of(
                     request.getCounter() - 1, SEARCH_PAGE_SIZE, searchSort(request.getFilter()));
             Optional<List<ItemSummaryDataDTO>> items = service.searchItemSummaries(title, categories, page);
@@ -110,15 +108,6 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
                 fail(responseObserver, e, "list item summaries");
             }
         }
-    }
-
-    private static String searchCategoryName(Category category)
-    {
-        if(category == Category.UNSPECIFIED || category == category.UNRECOGNIZED)
-        {
-            throw new IllegalArgumentException("Unknown search category");
-        }
-        return category.name();
     }
 
     private static Sort searchSort(Filter filter) {
@@ -175,12 +164,11 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
             fail(responseObserver, e, "remove item listing");
         }
     }
-    //TODO: Add picture and keyword update
     @Override
     public void updateItemListing(UpdateItemListingRequest request,
                                   io.grpc.stub.StreamObserver<com.google.protobuf.Empty> responseObserver) {
         try {
-            boolean updated = service.updateItem(request);
+            boolean updated = service.updateItem(ItemListingDataMapper.toUpdateDTO(request));
             if (updated) {
                 responseObserver.onNext(com.google.protobuf.Empty.getDefaultInstance());
                 responseObserver.onCompleted();
