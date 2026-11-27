@@ -4,6 +4,7 @@ import dk.via.sep3.generated.AddMemberRequest;
 import dk.via.sep3.generated.Member;
 import dk.via.sep3.generated.MemberResponse;
 import dk.via.sep3.generated.MemberServiceGrpc;
+import dk.via.sep3.generated.LoginRequest;
 import dk.via.sep3.exception.InvalidRequestException;
 import dk.via.sep3.exception.UpstreamException;
 import io.grpc.Status;
@@ -198,6 +199,54 @@ class MemberGrpcClientTest {
                     UpstreamException.class,
                     () -> client.addMember(validRequest)
             );
+        }
+    }
+
+    @Nested
+    @DisplayName("login")
+    class LoginTests {
+
+        @BeforeEach
+        void configureStub() {
+            when(stub.withDeadlineAfter(anyLong(), any())).thenReturn(stub);
+        }
+
+        private final LoginRequest request = LoginRequest.newBuilder()
+                .setMemberName("alice")
+                .setPassword("secret123")
+                .build();
+
+        @Test
+        @DisplayName("returns the response for valid credentials")
+        void validCredentials_returnResponse() {
+            MemberResponse expected = MemberResponse.newBuilder()
+                    .setMember(Member.newBuilder().setId(4).setMemberName("alice").build())
+                    .build();
+            when(stub.login(request)).thenReturn(expected);
+
+            assertEquals(Optional.of(expected), client.login(request));
+            verify(stub).login(request);
+        }
+
+        @Test
+        @DisplayName("returns empty when credentials are not found")
+        void wrongCredentials_returnEmpty() {
+            when(stub.login(request)).thenThrow(new StatusRuntimeException(Status.NOT_FOUND));
+
+            assertTrue(client.login(request).isEmpty());
+        }
+
+        @Test
+        @DisplayName("translates invalid arguments and upstream errors")
+        void errors_areTranslated() {
+            doThrow(new StatusRuntimeException(Status.INVALID_ARGUMENT.withDescription("Password is invalid")))
+                    .when(stub).login(request);
+            InvalidRequestException invalid = assertThrows(InvalidRequestException.class,
+                    () -> client.login(request));
+            assertEquals("Password is invalid", invalid.getMessage());
+
+            doThrow(new StatusRuntimeException(Status.UNAVAILABLE)).when(stub).login(request);
+            assertThrows(UpstreamException.class, () -> client.login(request));
         }
     }
 }

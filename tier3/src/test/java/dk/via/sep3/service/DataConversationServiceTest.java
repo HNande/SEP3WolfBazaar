@@ -56,6 +56,14 @@ class DataConversationServiceTest {
     }
 
     @Test
+    void removeConversation_delegatesToDao() {
+        when(conversationDAO.removeConversation(7)).thenReturn(true);
+
+        assertEquals(true, service.removeConversation(7));
+        verify(conversationDAO).removeConversation(7);
+    }
+
+    @Test
     void addMessage_delegatesToDao() {
         MessageDataDTO expected = new MessageDataDTO(9, 7, 3, "Hello", Instant.EPOCH);
         when(conversationDAO.addMessage(7, 3, "Hello")).thenReturn(expected);
@@ -71,6 +79,7 @@ class DataConversationServiceTest {
         assertThrows(IllegalArgumentException.class, () -> service.removeConversation(0));
         assertThrows(IllegalArgumentException.class, () -> service.getConversationSummaryList(0));
         assertThrows(IllegalArgumentException.class, () -> service.addMessage(7, 3, " "));
+        assertThrows(IllegalArgumentException.class, () -> service.addMessage(7, 3, null));
         verifyNoInteractions(conversationDAO);
     }
 }

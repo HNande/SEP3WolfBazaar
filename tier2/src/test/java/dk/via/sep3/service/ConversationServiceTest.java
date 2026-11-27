@@ -112,6 +112,28 @@ class ConversationServiceTest {
     }
 
     @Test
+    void removeConversation_returnsClientResult() {
+        when(client.removeConversation(11)).thenReturn(true);
+
+        assertTrue(service.removeConversation(11));
+        verify(client).removeConversation(11);
+    }
+
+    @Test
+    void allOperationsRejectNonPositiveIdsBeforeCallingClient() {
+        assertThrows(InvalidRequestException.class, () -> service.addConversation(0, 3, 4));
+        assertThrows(InvalidRequestException.class, () -> service.addConversation(2, 0, 4));
+        assertThrows(InvalidRequestException.class, () -> service.addConversation(2, 3, 0));
+        assertThrows(InvalidRequestException.class, () -> service.getConversation(0));
+        assertThrows(InvalidRequestException.class, () -> service.removeConversation(0));
+        assertThrows(InvalidRequestException.class, () -> service.getConversationSummaryList(0));
+        assertThrows(InvalidRequestException.class, () -> service.addMessage(0, 3, "Hello"));
+        assertThrows(InvalidRequestException.class, () -> service.addMessage(11, 0, "Hello"));
+        assertThrows(InvalidRequestException.class, () -> service.addMessage(11, 3, null));
+        verifyNoInteractions(client);
+    }
+
+    @Test
     void addMessage_blankContent_isRejected() {
         assertThrows(InvalidRequestException.class, () -> service.addMessage(11, 3, " "));
         verifyNoInteractions(client);
