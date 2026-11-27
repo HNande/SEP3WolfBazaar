@@ -8,7 +8,6 @@ import dk.via.sep3.client.MemberGrpcClient;
 import dk.via.sep3.generated.AddMemberRequest;
 import dk.via.sep3.generated.LoginRequest;
 import dk.via.sep3.generated.Member;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -18,11 +17,9 @@ import java.util.Optional;
 public class MemberService {
 
     private final MemberGrpcClient memberClient;
-    private final PasswordEncoder passwordEncoder;
 
-    public MemberService(MemberGrpcClient memberClient, PasswordEncoder passwordEncoder) {
+    public MemberService(MemberGrpcClient memberClient) {
         this.memberClient = memberClient;
-        this.passwordEncoder = passwordEncoder;
     }
 
     public Optional<String> validatePassword(String password) {
@@ -42,7 +39,8 @@ public class MemberService {
                 .setFirstName(dto.firstName().trim())
                 .setLastName(dto.lastName().trim())
                 .setMemberName(dto.username().trim())
-                .setPassword(passwordEncoder.encode(dto.password()))
+                .setMemberEmail(dto.email().trim())
+                .setPassword(dto.password())
                 .build();
 
         return memberClient.addMember(request)
