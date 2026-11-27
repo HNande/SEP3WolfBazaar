@@ -105,11 +105,12 @@ class ItemListingServiceTest {
                         .setItemName("Coat")
                         .setPrice(20)
                         .setOwnerId(2)
+                        .setDate(Date.newBuilder().setYear(2025).setMonth(1).setDay(2))
                         .build()));
 
         List<ItemSummaryResponseDTO> result = service.getItemSummaries(criteria);
 
-        assertEquals(List.of(new ItemSummaryResponseDTO(3, "Coat", null, 20, 2)), result);
+        assertEquals(List.of(new ItemSummaryResponseDTO(3, "Coat", null, 20, 2025, 1, 2, 2)), result);
         verify(client).getItemsSummaries(criteria);
         assertThrows(InvalidRequestException.class,
                 () -> service.getItemSummaries(new ItemSearchCriteriaDTO("", List.of(), 0, 0, 0)));

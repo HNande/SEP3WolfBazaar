@@ -52,6 +52,7 @@ class JpaItemSummarySearchTest {
         assertEquals(List.of(winterCoat.getItemId(), summerCoat.getItemId()),
                 results.stream().map(result -> result.itemId()).toList());
         assertEquals(winterCoat.getOwner().getMemberId(), results.get(0).ownerId());
+        assertEquals(LocalDate.of(2025, 1, 2), results.get(0).listDate());
     }
 
     @Test

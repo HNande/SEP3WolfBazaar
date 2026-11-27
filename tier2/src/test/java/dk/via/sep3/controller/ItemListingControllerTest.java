@@ -3,6 +3,7 @@ package dk.via.sep3.controller;
 import dk.via.sep3.dto.ItemListingJsonDTO;
 import dk.via.sep3.dto.ItemListingResponseDTO;
 import dk.via.sep3.dto.ItemSearchCriteriaDTO;
+import dk.via.sep3.dto.ItemSummaryResponseDTO;
 import dk.via.sep3.exception.ApiExceptionHandler;
 import dk.via.sep3.exception.InvalidRequestException;
 import dk.via.sep3.exception.UpstreamException;
@@ -47,8 +48,14 @@ class ItemListingControllerTest {
 
     @Test
     void getSummariesPassesNormalizedCriteriaAndDefaults() throws Exception {
+        when(service.getItemSummaries(any(ItemSearchCriteriaDTO.class))).thenReturn(List.of(
+                new ItemSummaryResponseDTO(3, "Coat", "Warm", 20, 2025, 1, 2, 7)));
+
         mvc.perform(get("/api/item").param("title", "  coat ").param("categories", "CLOTHING"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].year").value(2025))
+                .andExpect(jsonPath("$[0].month").value(1))
+                .andExpect(jsonPath("$[0].day").value(2));
 
         ArgumentCaptor<ItemSearchCriteriaDTO> criteria = ArgumentCaptor.forClass(ItemSearchCriteriaDTO.class);
         verify(service).getItemSummaries(criteria.capture());

@@ -120,6 +120,9 @@ class ItemListingDataMapperTest {
         assertEquals("", summary.getItemName());
         assertEquals("", summary.getDescription());
         assertEquals(30, summary.getPrice());
+        assertEquals(2024, summary.getDate().getYear());
+        assertEquals(6, summary.getDate().getMonth());
+        assertEquals(8, summary.getDate().getDay());
 
         var thumbnail = ItemListingDataMapper.toProtoThumbnail(
                 new ThumbnailDataDTO(7, ImageFileType.PNG, 2, 4, new byte[]{3}));

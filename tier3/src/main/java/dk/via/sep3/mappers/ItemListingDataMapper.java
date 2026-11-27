@@ -157,6 +157,11 @@ public class ItemListingDataMapper {
             .setDescription(orEmpty(dto.description()))
             .setPrice(dto.price())
             .setOwnerId(dto.ownerId())
+            .setDate(dk.via.sep3.generated.Date.newBuilder()
+                    .setYear(dto.listDate().getYear())
+                    .setMonth(dto.listDate().getMonthValue())
+                    .setDay(dto.listDate().getDayOfMonth())
+                    .build())
             .build();
   }
 

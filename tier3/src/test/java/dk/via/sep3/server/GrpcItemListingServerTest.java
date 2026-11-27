@@ -92,6 +92,9 @@ class GrpcItemListingServerTest {
         server.getListItemSummaries(request, observer);
 
         assertEquals(7, observer.values().get(0).getItems(0).getId());
+        assertEquals(2025, observer.values().get(0).getItems(0).getDate().getYear());
+        assertEquals(1, observer.values().get(0).getItems(0).getDate().getMonth());
+        assertEquals(2, observer.values().get(0).getItems(0).getDate().getDay());
         assertTrue(observer.completed());
         verify(service).searchItemSummaries("coat", List.of("GARDENING", "OUTDOOR_GOODS"),
                 PageRequest.of(1, 50, Sort.by(Sort.Order.desc("price"), Sort.Order.asc("listDate"),

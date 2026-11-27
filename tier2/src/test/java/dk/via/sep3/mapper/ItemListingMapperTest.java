@@ -95,13 +95,14 @@ class ItemListingMapperTest {
     @Test
     void summaryAndThumbnailResponsesNormalizeEmptyDescriptionAndCopyData() {
         ItemSummaryResponseDTO summary = ItemListingMapper.toSummaryResponse(ItemSummary.newBuilder()
-                .setId(3).setItemName("Table").setDescription("").setPrice(18).setOwnerId(2).build());
+                .setId(3).setItemName("Table").setDescription("").setPrice(18).setOwnerId(2)
+                .setDate(Date.newBuilder().setYear(2025).setMonth(4).setDay(9)).build());
         ThumbnailResponseDTO thumbnail = ItemListingMapper.toThumbnailResponse(ItemThumbnail.newBuilder()
                 .setItemId(3).setFiletype(ImageFileType.PNG).setWidth(2).setHeight(1)
                 .setData(ByteString.copyFrom(new byte[]{1, 2})).build());
 
         assertNull(summary.description());
-        assertEquals(new ItemSummaryResponseDTO(3, "Table", null, 18, 2), summary);
+        assertEquals(new ItemSummaryResponseDTO(3, "Table", null, 18, 2025, 4, 9, 2), summary);
         assertEquals(3, thumbnail.itemId());
         assertEquals(ImageFileType.PNG, thumbnail.filetype());
         assertArrayEquals(new byte[]{1, 2}, thumbnail.data());
