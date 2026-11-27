@@ -7,8 +7,10 @@ import dk.via.sep3.entities.Category;
 import dk.via.sep3.entities.ImageFileType;
 import dk.via.sep3.entities.ItemListing;
 import dk.via.sep3.entities.ItemPicture;
+import dk.via.sep3.entities.Member;
 import dk.via.sep3.repository.CategoryRepository;
 import dk.via.sep3.repository.ItemListingRepository;
+import dk.via.sep3.repository.MemberRepository;
 import dk.via.sep3.support.TestImages;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -27,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -39,13 +43,18 @@ class ItemListingDAOTest {
 
     private ItemListingRepository listingRepository;
     private CategoryRepository categoryRepository;
+    private MemberRepository memberRepository;
     private ItemListingDAO dao;
 
     @BeforeEach
     void setUp() {
         listingRepository = mock(ItemListingRepository.class);
         categoryRepository = mock(CategoryRepository.class);
-        dao = new ItemListingDAO(listingRepository, categoryRepository, imageDirectory.toString());
+        memberRepository = mock(MemberRepository.class);
+        when(memberRepository.findById(anyInt())).thenAnswer(invocation ->
+                Optional.of(member(invocation.getArgument(0))));
+        dao = new ItemListingDAO(listingRepository, categoryRepository, memberRepository,
+                imageDirectory.toString());
     }
 
     @Test
@@ -99,7 +108,11 @@ class ItemListingDAOTest {
         assertEquals(1, result.imageList().size());
         assertArrayEquals(imageBytes, result.imageList().get(0).data());
         verify(categoryRepository).findByNameIn(List.of("CLOTHING"));
-        verify(listingRepository).save(any(ItemListing.class));
+        verify(memberRepository).findById(2);
+        org.mockito.ArgumentCaptor<ItemListing> savedListing =
+                org.mockito.ArgumentCaptor.forClass(ItemListing.class);
+        verify(listingRepository).save(savedListing.capture());
+        assertEquals(2, savedListing.getValue().getOwnerId());
         try (var files = Files.list(imageDirectory)) {
             assertEquals(2, files.count());
         }
@@ -116,6 +129,17 @@ class ItemListingDAOTest {
                 2, List.of("CLOTHING"));
         when(categoryRepository.findByNameIn(List.of("CLOTHING"))).thenReturn(List.of());
         assertThrows(IllegalStateException.class, () -> dao.addNewItemListing(incompleteCategories));
+        verifyNoInteractions(listingRepository);
+    }
+
+    @Test
+    void addNewItemRejectsUnknownOwner() {
+        when(memberRepository.findById(999)).thenReturn(Optional.empty());
+        ItemListingDataDTO dto = new ItemListingDataDTO("Coat", "Warm", 20,
+                List.of(), 999, List.of());
+
+        assertThrows(NoSuchElementException.class, () -> dao.addNewItemListing(dto));
+
         verifyNoInteractions(listingRepository);
     }
 
@@ -184,9 +208,15 @@ class ItemListingDAOTest {
     }
 
     private static ItemListing listing(int id) {
-        ItemListing listing = new ItemListing("Item " + id, "Description", 10, 2);
+        ItemListing listing = new ItemListing("Item " + id, "Description", 10, member(2));
         listing.setItemId(id);
         listing.setListDate(LocalDate.of(2025, 1, 2));
         return listing;
+    }
+
+    private static Member member(int id) {
+        Member member = new Member("First", "Last", "user" + id, "pw", "user" + id + "@example.com");
+        member.setMemberId(id);
+        return member;
     }
 }

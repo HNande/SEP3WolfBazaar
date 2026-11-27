@@ -10,12 +10,14 @@ class ItemListingEntityTest {
 
     @Test
     void constructorSetsFieldsAndStartsWithNoPicturesOrCategories() {
-        ItemListing listing = new ItemListing("Coat", "Warm", 250, 4);
+        Member owner = member(4);
+        ItemListing listing = new ItemListing("Coat", "Warm", 250, owner);
 
         assertThat(listing.getItemName()).isEqualTo("Coat");
         assertThat(listing.getDescription()).isEqualTo("Warm");
         assertThat(listing.getPrice()).isEqualTo(250);
         assertThat(listing.getOwnerId()).isEqualTo(4);
+        assertThat(listing.getOwner()).isSameAs(owner);
         assertThat(listing.getPictures()).isEmpty();
         assertThat(listing.getCategories()).isEmpty();
     }
@@ -61,5 +63,11 @@ class ItemListingEntityTest {
         listing.onCreate();
 
         assertThat(listing.getListDate()).isEqualTo(date);
+    }
+
+    private static Member member(int id) {
+        Member member = new Member("First", "Last", "user" + id, "pw", "user" + id + "@example.com");
+        member.setMemberId(id);
+        return member;
     }
 }

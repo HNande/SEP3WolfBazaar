@@ -6,9 +6,11 @@ import dk.via.sep3.dto.ItemListingResponseDTO;
 import dk.via.sep3.dto.UpdateItemListingDataDTO;
 import dk.via.sep3.entities.ImageFileType;
 import dk.via.sep3.entities.ItemListing;
+import dk.via.sep3.entities.Member;
 import dk.via.sep3.entities.ItemPicture;
 import dk.via.sep3.mappers.ItemListingDataMapper;
 import dk.via.sep3.repository.ItemListingRepository;
+import dk.via.sep3.repository.MemberRepository;
 import dk.via.sep3.util.ImageResizer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
@@ -25,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -42,13 +45,16 @@ public class ItemListingDAO {
   private final ItemListingRepository itemListingRepository;
   private final Path imageDirectory;
   private final CategoryRepository categoryRepository;
+  private final MemberRepository memberRepository;
 
   public ItemListingDAO(
           ItemListingRepository itemListingRepository,
           CategoryRepository categoryRepository,
+          MemberRepository memberRepository,
           @Value("${wolfbazaar.images.dir:uploads/images}") String imageDirectory) {
     this.itemListingRepository = itemListingRepository;
     this.categoryRepository = categoryRepository;
+    this.memberRepository = memberRepository;
     this.imageDirectory = Path.of(imageDirectory).toAbsolutePath();
   }
 
@@ -59,7 +65,9 @@ public class ItemListingDAO {
     listing.setDescription(dto.description());
     listing.setPrice(dto.price());
     listing.setListDate(LocalDate.now());
-    listing.setOwnerId(dto.ownerId());
+    Member owner = memberRepository.findById(dto.ownerId())
+            .orElseThrow(() -> new NoSuchElementException("Member " + dto.ownerId() + " not found"));
+    listing.setOwner(owner);
     listing.getCategories().addAll(resolveCategories(dto.categoryNames()));
 
     Map<Path, byte[]> filesToWrite = new LinkedHashMap<>();

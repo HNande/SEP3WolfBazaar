@@ -28,8 +28,9 @@ public class ItemListing {
     @Column(name = "list_date", nullable = false)
     private LocalDate listDate;
 
-    @Column(name="owner_id", nullable = false)
-    private int ownerId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id", referencedColumnName = "member_id", nullable = false)
+    private Member owner;
 
     @ManyToMany
     @JoinTable(
@@ -45,11 +46,11 @@ public class ItemListing {
     public ItemListing() {
     }
 
-    public ItemListing(String itemName, String description, int price, int ownerId) {
+    public ItemListing(String itemName, String description, int price, Member owner) {
         this.itemName = itemName;
         this.description = description;
         this.price = price;
-        this.ownerId = ownerId;
+        this.owner = owner;
     }
 
     @PrePersist
@@ -90,12 +91,7 @@ public class ItemListing {
     public List<ItemPicture> getPictures() { return pictures; }
     public void setPictures(List<ItemPicture> pictures) { this.pictures = pictures; }
 
-    public int getOwnerId()
-    {
-        return ownerId;
-    }
-    public void setOwnerId(int ownerId)
-    {
-        this.ownerId = ownerId;
-    }
+    public Member getOwner() { return owner; }
+    public void setOwner(Member owner) { this.owner = owner; }
+    public int getOwnerId() { return owner.getMemberId(); }
 }

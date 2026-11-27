@@ -163,7 +163,7 @@ class ConversationDAOTest {
     }
 
     private static ItemListing listing(int id, int ownerId, String name) {
-        ItemListing listing = new ItemListing(name, "Description", 10, ownerId);
+        ItemListing listing = new ItemListing(name, "Description", 10, member(ownerId));
         listing.setItemId(id);
         return listing;
     }

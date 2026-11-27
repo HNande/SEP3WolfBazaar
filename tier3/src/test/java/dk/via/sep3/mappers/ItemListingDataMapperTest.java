@@ -8,6 +8,7 @@ import dk.via.sep3.dto.ThumbnailDataDTO;
 import dk.via.sep3.entities.Category;
 import dk.via.sep3.entities.ImageFileType;
 import dk.via.sep3.entities.ItemListing;
+import dk.via.sep3.entities.Member;
 import dk.via.sep3.entities.ItemPicture;
 import dk.via.sep3.support.TestImages;
 import dk.via.sep3.util.ListingCategories;
@@ -78,7 +79,7 @@ class ItemListingDataMapperTest {
         byte[] imageBytes = TestImages.png(3, 5);
         Path imagePath = tempDirectory.resolve("coat.png");
         Files.write(imagePath, imageBytes);
-        ItemListing listing = new ItemListing("Coat", "Warm", 20, 4);
+        ItemListing listing = new ItemListing("Coat", "Warm", 20, member(4));
         listing.setItemId(9);
         listing.setListDate(LocalDate.of(2025, 3, 4));
         listing.getCategories().add(new Category("CLOTHING"));
@@ -129,12 +130,18 @@ class ItemListingDataMapperTest {
 
     @Test
     void mapsUnknownStoredCategoriesToNoProtoCategory() {
-        ItemListing listing = new ItemListing("Coat", "Warm", 20, 4);
+        ItemListing listing = new ItemListing("Coat", "Warm", 20, member(4));
         listing.setListDate(LocalDate.now());
         listing.getCategories().add(new Category("invalid"));
 
         assertTrue(ItemListingDataMapper.toResponseDTO(listing).categoryList().isEmpty());
         assertEquals(dk.via.sep3.generated.Category.UNSPECIFIED,
                 ListingCategories.fromStoredName("invalid"));
+    }
+
+    private static Member member(int id) {
+        Member member = new Member("First", "Last", "user" + id, "pw", "user" + id + "@example.com");
+        member.setMemberId(id);
+        return member;
     }
 }

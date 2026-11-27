@@ -2,6 +2,7 @@ package dk.via.sep3.dao;
 
 import dk.via.sep3.entities.ImageFileType;
 import dk.via.sep3.entities.ItemListing;
+import dk.via.sep3.entities.Member;
 import dk.via.sep3.entities.ItemPicture;
 import dk.via.sep3.repository.ItemListingRepository;
 import dk.via.sep3.repository.ItemPictureRepository;
@@ -110,7 +111,9 @@ class ItemSummaryDAOTest {
     }
 
     private ItemListing listing(int id) {
-        ItemListing listing = new ItemListing("Item " + id, "Description", id * 10, 3);
+        Member owner = new Member("First", "Last", "user3", "pw", "user3@example.com");
+        owner.setMemberId(3);
+        ItemListing listing = new ItemListing("Item " + id, "Description", id * 10, owner);
         listing.setItemId(id);
         listing.setListDate(LocalDate.of(2025, 1, 2));
         return listing;

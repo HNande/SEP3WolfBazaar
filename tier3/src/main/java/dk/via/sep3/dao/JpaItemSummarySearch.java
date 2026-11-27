@@ -47,7 +47,7 @@ public class JpaItemSummarySearch implements ItemSummarySearch {
 
         query.select(cb.construct(ItemSummaryDataDTO.class,
                         item.get("itemId"), item.get("itemName"), item.get("description"),
-                        item.get("price"), item.get("listDate"), item.get("ownerId")))
+                        item.get("price"), item.get("listDate"), item.get("owner").get("memberId")))
                 .where(filters.toArray(Predicate[]::new))
                 .orderBy(QueryUtils.toOrders(page.getSort(), item, cb));
 

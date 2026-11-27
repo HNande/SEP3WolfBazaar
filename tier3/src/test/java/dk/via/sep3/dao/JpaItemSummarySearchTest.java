@@ -2,7 +2,9 @@ package dk.via.sep3.dao;
 
 import dk.via.sep3.entities.Category;
 import dk.via.sep3.entities.ItemListing;
+import dk.via.sep3.entities.Member;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -14,6 +16,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DataJpaTest(properties = {
         "spring.datasource.url=jdbc:h2:mem:item-summary-search;DB_CLOSE_DELAY=-1",
@@ -48,6 +51,7 @@ class JpaItemSummarySearchTest {
 
         assertEquals(List.of(winterCoat.getItemId(), summerCoat.getItemId()),
                 results.stream().map(result -> result.itemId()).toList());
+        assertEquals(winterCoat.getOwner().getMemberId(), results.get(0).ownerId());
     }
 
     @Test
@@ -85,6 +89,14 @@ class JpaItemSummarySearchTest {
                 results.stream().map(result -> result.itemId()).toList());
     }
 
+    @Test
+    void listingOwnerMustReferenceAnExistingMember() {
+        assertThrows(PersistenceException.class, () -> entityManager.createNativeQuery(
+                        "INSERT INTO item_listing (item_name, price, list_date, owner_id) "
+                                + "VALUES ('orphan listing', 10, DATE '2025-01-02', 999999)")
+                .executeUpdate());
+    }
+
     private Category category(String name) {
         Category category = new Category(name);
         entityManager.persist(category);
@@ -92,10 +104,17 @@ class JpaItemSummarySearchTest {
     }
 
     private ItemListing listing(String name, int price, Category category) {
-        ItemListing listing = new ItemListing(name, "Description", price, 3);
+        ItemListing listing = new ItemListing(name, "Description", price, member(name));
         listing.setListDate(LocalDate.of(2025, 1, 2));
         listing.getCategories().add(category);
         entityManager.persist(listing);
         return listing;
+    }
+
+    private Member member(String name) {
+        String username = "owner-" + name.replace(' ', '-');
+        Member owner = new Member("First", "Last", username, "pw", username + "@example.com");
+        entityManager.persist(owner);
+        return owner;
     }
 }
