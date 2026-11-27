@@ -14,8 +14,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
-import dk.via.sep3.util.ListingCategories;
-
 @Service
 public class DataItemListingService {
 
@@ -23,12 +21,10 @@ public class DataItemListingService {
 
     private final ItemListingDAO itemListingDAO;
     private final ItemSummaryDAO itemSummaryDAO;
-    private final ItemSummarySearch itemSummarySearch;
+    private final Optional<ItemSummarySearch> itemSummarySearch;
 
-    public DataItemListingService(
-            ItemListingDAO itemListingDAO,
-            ItemSummaryDAO itemSummaryDAO,
-            ItemSummarySearch itemSummarySearch) {
+    public DataItemListingService(ItemListingDAO itemListingDAO, ItemSummaryDAO itemSummaryDAO,
+                                  Optional<ItemSummarySearch> itemSummarySearch) {
         this.itemListingDAO = itemListingDAO;
         this.itemSummaryDAO = itemSummaryDAO;
         this.itemSummarySearch = itemSummarySearch;
@@ -58,6 +54,10 @@ public class DataItemListingService {
         return itemSummaryDAO.getItemSummaries(pageSize, pageToken);
     }
 
+    public Optional<List<ItemSummaryDataDTO>> searchItemSummaries(
+            String title, List<String> categoryNames, Pageable page) {
+        return itemSummarySearch.map(search -> search.search(title, categoryNames, page));
+    }
 
     public List<ThumbnailDataDTO> getFirstThumbnails(List<Integer> ids) {
         if (ids == null || ids.isEmpty() || ids.size() > MAX_THUMBNAIL_IDS) {
@@ -67,17 +67,12 @@ public class DataItemListingService {
         return itemSummaryDAO.getFirstThumbnails(ids.stream().distinct().toList());
     }
 
-    public List<ItemSummaryDataDTO> searchItemSummaries(
-            String title, List<String> categoryNames, Pageable page) {
-        return itemSummarySearch.search(title, categoryNames, page);
-    }
-
     public boolean updateItem(UpdateItemListingRequest request) {
         return itemListingDAO.updateItemListing(
                 request.getItemId(),
                 request.getItemName(),
                 request.getDescription(),
-                request.getPrice(),
-                ListingCategories.names(request.getCategoriesList()));
+                request.getPrice()
+        );
     }
 }
