@@ -60,6 +60,9 @@ public final class ItemListingMapper {
         item.getItemName(),
         emptyToNull(item.getDescription()),
         item.getPrice(),
+        item.getDate().getYear(),
+        item.getDate().getMonth(),
+        item.getDate().getDay(),
         item.getOwnerId());
 
   }

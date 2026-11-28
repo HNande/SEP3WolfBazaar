@@ -65,6 +65,7 @@ message ItemSummary {
   string description = 3;
   int32 price = 4;
   int32 ownerId = 5;
+  Date date = 6;
 }
 message ConversationSummary{
   int32 id = 1;

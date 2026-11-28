@@ -26,7 +26,7 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
 
     private static final Logger LOG = LoggerFactory.getLogger(GrpcItemListingServer.class);
     private static final int MAX_SEARCH_TITLE_LENGTH = 100;
-    private static final int SEARCH_PAGE_SIZE = 10;
+    private static final int SEARCH_PAGE_SIZE = 50;
     private final DataItemListingService service;
 
     public GrpcItemListingServer(DataItemListingService service) {
@@ -66,9 +66,8 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
     }
 
     @Override
-    public void getListItemSummaries(
-        ListItemListingSummaryRequest request,
-        StreamObserver<ListItemSummariesResponse> responseObserver) {
+    public void getListItemSummaries(ListItemListingSummaryRequest request,
+                                     StreamObserver<ListItemSummariesResponse> responseObserver) {
         Context context = Context.current();
         if (context.isCancelled()) {
             return;
@@ -78,45 +77,37 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
             String title = request.getTitle().strip();
             if (title.length() > MAX_SEARCH_TITLE_LENGTH) {
                 throw new IllegalArgumentException(
-                    "Title must be at most " + MAX_SEARCH_TITLE_LENGTH + " characters");
+                        "Title must be at most " + MAX_SEARCH_TITLE_LENGTH + " characters");
             }
             if (request.getCounter() < 1) {
                 throw new IllegalArgumentException("Counter must be at least 1");
             }
 
-            List<String> categories =
-                ListingCategories.searchNames(request.getCategoryListList());
+            List<String> categories = ListingCategories.searchNames(request.getCategoryListList());
             PageRequest page = PageRequest.of(
-                request.getCounter() - 1, SEARCH_PAGE_SIZE, searchSort(request.getFilter()));
-            if (page.getOffset() > Integer.MAX_VALUE) {
-                throw new IllegalArgumentException("Counter is too large");
-            }
-
-            List<ItemSummaryDataDTO> items = service.searchItemSummaries(title, categories, page);
+                    request.getCounter() - 1, SEARCH_PAGE_SIZE, searchSort(request.getFilter()));
+            Optional<List<ItemSummaryDataDTO>> items = service.searchItemSummaries(title, categories, page);
             if (context.isCancelled()) {
+                return;
+            }
+            if (items.isEmpty()) {
+                responseObserver.onError(Status.UNIMPLEMENTED
+                        .withDescription("Catalogue search query is not configured")
+                        .asRuntimeException());
                 return;
             }
 
             responseObserver.onNext(ListItemSummariesResponse.newBuilder()
-                .addAllItems(items.stream()
-                    .map(ItemListingDataMapper::toProtoSummary)
-                    .toList())
-                .build());
+                    .addAllItems(items.get().stream()
+                            .map(ItemListingDataMapper::toProtoSummary)
+                            .toList())
+                    .build());
             responseObserver.onCompleted();
         } catch (Exception e) {
             if (!context.isCancelled()) {
                 fail(responseObserver, e, "list item summaries");
             }
         }
-    }
-
-    private static String searchCategoryName(Category category)
-    {
-        if(category == Category.UNSPECIFIED || category == category.UNRECOGNIZED)
-        {
-            throw new IllegalArgumentException("Unknown search category");
-        }
-        return category.name();
     }
 
     private static Sort searchSort(Filter filter) {
@@ -173,20 +164,19 @@ public class GrpcItemListingServer extends ItemListingServiceGrpc.ItemListingSer
             fail(responseObserver, e, "remove item listing");
         }
     }
-    //TODO: Add picture and keyword update
     @Override
     public void updateItemListing(UpdateItemListingRequest request,
-        io.grpc.stub.StreamObserver<com.google.protobuf.Empty> responseObserver) {
+                                  io.grpc.stub.StreamObserver<com.google.protobuf.Empty> responseObserver) {
         try {
-            boolean updated = service.updateItem(request);
+            boolean updated = service.updateItem(ItemListingDataMapper.toUpdateDTO(request));
             if (updated) {
                 responseObserver.onNext(com.google.protobuf.Empty.getDefaultInstance());
                 responseObserver.onCompleted();
                 LOG.info("Item listing [ id={} ] updated successfully", request.getItemId());
             } else {
                 responseObserver.onError(io.grpc.Status.NOT_FOUND
-                    .withDescription("Item listing with id " + request.getItemId() + " not found")
-                    .asRuntimeException());
+                        .withDescription("Item listing with id " + request.getItemId() + " not found")
+                        .asRuntimeException());
             }
         } catch (Exception e) {
             fail(responseObserver, e, "update item listing");

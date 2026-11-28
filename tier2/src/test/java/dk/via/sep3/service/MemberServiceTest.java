@@ -14,8 +14,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 
@@ -26,14 +24,12 @@ import static org.mockito.Mockito.*;
 class MemberServiceTest {
 
     private MemberGrpcClient client;
-    private PasswordEncoder encoder;
     private MemberService service;
 
     @BeforeEach
     void setUp() {
         client = mock(MemberGrpcClient.class);
-        encoder = new BCryptPasswordEncoder();
-        service = new MemberService(client, encoder);
+        service = new MemberService(client);
     }
 
     @Nested
@@ -114,8 +110,8 @@ class MemberServiceTest {
         }
 
         @Test
-        @DisplayName("sends trimmed fields and a plain password to tier 3")
-        void one_validDto_sendsTrimmedFieldsAndPlainPassword() {
+        @DisplayName("sends trimmed fields, email, and the original password to tier 3")
+        void one_validDto_sendsTrimmedFieldsAndOriginalPassword() {
             Member protoMember = Member.newBuilder().build();
             when(client.addMember(any(AddMemberRequest.class)))
                     .thenReturn(Optional.of(MemberResponse.newBuilder().setMember(protoMember).build()));
@@ -129,15 +125,16 @@ class MemberServiceTest {
             assertEquals("Fenrir", sent.getFirstName());
             assertEquals("Wolf", sent.getLastName());
             assertEquals("fenrir99", sent.getMemberName());
-            assertEquals("password123", sent.getPassword());
+            assertEquals("fenrir@wolf.dk", sent.getMemberEmail());
+            assertEquals(dto.password(), sent.getPassword());
         }
 
         @Test
-        @DisplayName("throws NoSuchElementException when the username is already taken")
-        void boundary_usernameTaken_throws() {
+        @DisplayName("returns empty when the username is already taken")
+        void boundary_usernameTaken_returnsEmpty() {
             when(client.addMember(any(AddMemberRequest.class))).thenReturn(Optional.empty());
 
-            assertThrows(Exception.class, () -> service.register(dto));
+            assertTrue(service.register(dto).isEmpty());
         }
 
         @Test
@@ -176,7 +173,7 @@ class MemberServiceTest {
             Optional<MemberResponseDTO> result = service.login(dto);
 
             assertTrue(result.isPresent());
-            assertEquals(new MemberResponseDTO(1, "fenrir99", "", "Fenrir", "Wolf"), result.get());
+            assertEquals(new MemberResponseDTO(1, "fenrir99", "", "", ""), result.get());
             ArgumentCaptor<LoginRequest> captor = ArgumentCaptor.forClass(LoginRequest.class);
             verify(client).login(captor.capture());
             assertEquals("fenrir99", captor.getValue().getMemberName());
